@@ -84,6 +84,6 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.WARNING)
     
     #grab pass as argv for now 
-    password = sys.argv[1]
+    password = sys.argv[1] 
     
     main(password)
