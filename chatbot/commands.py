@@ -85,7 +85,9 @@ def expiry(body={}, roomId="", sender="", event={}):
 
     tls_config = ldap3.Tls(validate=ssl.CERT_REQUIRED)
     server = ldap3.Server(LDAP_URI, use_ssl=True, tls=tls_config)
-    conn = ldap3.Connection(server, user="cn=readonly,dc=yakko,dc=cs,dc=wmich,dc=edu", password=environ.get("LDAP_READONLY_PASSWORD"), auto_bind="NONE", read_only=True)
+    conn = ldap3.Connection(server, user="cn=readonly,dc=yakko,dc=cs,dc=wmich,dc=edu", 
+                            password=environ.get("LDAP_READONLY_PASSWORD"), 
+                            auto_bind="NONE", read_only=True)
     
     conn.open()
     conn.start_tls()
