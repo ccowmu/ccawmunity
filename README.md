@@ -4,7 +4,7 @@
 
 ### Checklist:
 
-- [ ] Create a function definition that matches the following:
+- [ ] Create a function definition in chatbot/commands.py that matches the following
 
 - [ ] Uses the same arguments as others in the same list
     as these are standardized for that event type
