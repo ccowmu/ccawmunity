@@ -1,4 +1,8 @@
 import random
+import ldap3
+import ssl
+from datetime import datetime
+from os import environ
 
 # HOW TO CONTRIBUTE A FUNCTION
 #
@@ -70,6 +74,35 @@ def eccho(body={}, roomId="", sender="", event={}):
 def contribute(body={}, roomId="", sender="", event={}):
     return "Contribute a function! https://github.com/ccowmu/ccawmunity"
 
+# chat command $expiry
+# takes one uid
+# returns a String - user expiration date
+def expiry(body={}, roomId="", sender="", event={}):
+    LDAP_URI = "ldap://cclub.cs.wmich.edu:389"
+    MEMBER_BASE = 'cn=members,dc=yakko,dc=cs,dc=wmich,dc=edu'
+    POSIX_DAY = 86400
+    DESIRED_FIELDS = ["shadowExpire"]
+
+    tls_config = ldap3.Tls(validate=ssl.CERT_REQUIRED)
+    server = ldap3.Server(LDAP_URI, use_ssl=True, tls=tls_config)
+    conn = ldap3.Connection(server, user="cn=readonly,dc=yakko,dc=cs,dc=wmich,dc=edu", password=environ.get("LDAP_READONLY_PASSWORD"), auto_bind="NONE", read_only=True)
+    
+    conn.open()
+    conn.start_tls()
+    conn.bind()
+
+    try:
+        preparedQuery = "(uid="+ str(body[1]) + ")"
+        r = conn.search(search_base=MEMBER_BASE, search_filter=preparedQuery, attributes=DESIRED_FIELDS)
+        res = conn.entries[0]
+        shadow_expire = res["shadowExpire"].value
+        unix_timestamp = shadow_expire * POSIX_DAY
+        return str(datetime.utcfromtimestamp(unix_timestamp).strftime('%Y-%m-%d'))
+    except:
+        return "something went wrong"
+    finally:
+        conn.unbind()
+
 # REMINDER - make sure the commas follow every k/v pair except
 #            for the last one in each dictionary!
 
@@ -77,7 +110,7 @@ def contribute(body={}, roomId="", sender="", event={}):
 # note the values are function objects
 COMMANDLIST = {
     "$test": test, "$random": ran100, "$echo": echo, "$commands": commands,
-    "$help": botHelp, "$eccho": eccho, "$contribute": contribute
+    "$help": botHelp, "$eccho": eccho, "$contribute": contribute, "$expiry": expiry
 }
 
 # define our global help list based on the function
@@ -88,5 +121,6 @@ HELPLIST = {
     "$commands": "$commands - No parameters required, lists all available commands.",
     "$help": "$help - 1 accepted, returns information about the use of a given function ie \"$help $echo\".",
     "$eccho": "$eccho - No parameters required, inside A E S T H E T I C joke.",
-    "$contribute": "$contribute - No parameters required, links the repository url."
+    "$contribute": "$contribute - No parameters required, links the repository url.",
+    "$expiry": "$expiry - takes one uid, returns expiry date for user"
 }
