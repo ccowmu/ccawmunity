@@ -13,14 +13,15 @@
 
 import sys
 import logging
-import random
 
 from matrix_client.client import MatrixClient
 from matrix_client.api import MatrixRequestError
 from requests.exceptions import MissingSchema
 
+from functools import partial
+from commands import *
 
-# Called when a message is recieved.
+# called when a message is recieved.
 def on_message(room, event):
     if event['type'] == "m.room.member":
         if event['membership'] == "join":
@@ -29,17 +30,21 @@ def on_message(room, event):
         if event['content']['msgtype'] == "m.text":
             print("{0}: {1}".format(event['sender'], event['content']['body']))
 
-            #create responses for messages starting with $
+            # ignore anything the bot might send to itself
+            if(event['sender'] == "@ccawmu:cclub.cs.wmich.edu"):
+                return
+
+            # create responses for messages starting with $
             if(event['content']['body'][0] == '$'):
 
                 output = event['content']['body'].split(" ")
                 command = output[0]
 
-                # elif block to pass to other functions
-                if(command == "$test"):
-                    room.send_text("Why would have a test command DOLPHIN?")
-                elif(command == "$random"): 
-                    room.send_text(str(random.randint(-1, 100)))
+                # if the command is in our dictionary of functions, use it (from commands.py)
+                if command in COMMANDLIST:
+                    room.send_text(COMMANDLIST[command](body=output, roomId=event["room_id"], sender=event["sender"], event=event))
+                else:
+                    room.send_text("Command not recognized, please try \"$commands\" for available commands")
     else:
         print(event['type'])
 
@@ -85,5 +90,5 @@ if __name__ == '__main__':
     
     #grab pass as argv for now 
     password = sys.argv[1] 
-    
+     
     main(password)
