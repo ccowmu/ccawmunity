@@ -42,7 +42,7 @@ def on_message(room, event):
 
                 # if the command is in our dictionary of functions, use it (from commands.py)
                 if command in COMMANDLIST:
-                    room.send_text(COMMANDLIST[command](output))
+                    room.send_text(COMMANDLIST[command](body=output, roomId=event["room_id"], sender=event["sender"], event=event))
                 else:
                     room.send_text("Command not recognized, please try \"$commands\" for available commands")
     else:
