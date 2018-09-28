@@ -1,3 +1,5 @@
+from ..eventpackage import EventPackage
+
 class Command:
     def __init__(self):
         self.name = "$default_command_object"
@@ -5,7 +7,7 @@ class Command:
     def __str__(self):
         return self.name
 
-    def run(self, body={}, roomId="", sender="", event={}):
+    def run(self, eventpackage: EventPackage):
         return "This command doesn't have an implementation yet!"
 
     def get_name(self):
