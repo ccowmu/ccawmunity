@@ -6,7 +6,7 @@
 
 `self.name` : The name of the command. This should be written exactly as you would write the command in chat when you call it. Be sure to include a dollar sign.
 
-`self.help` : The command's help string as shown when the `$help` command is quried. It should follow this format:  
+`self.help` : The command's help string as shown when the `$help` command is queried. It should follow this format:  
 `$<command name> | <command purpose> | <usage instructions>`  
 Example:  
 `$info | Display info about a command. | Usage: $info <command (including the dollar sign)>`

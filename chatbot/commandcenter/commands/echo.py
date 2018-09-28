@@ -4,8 +4,8 @@ from ..eventpackage import EventPackage
 class EchoCommand(Command):
     def __init__(self):
         self.name = "$echo"
-        self.help = "$echo - N parameters accepted separated by spaces, bot echoes them back to chat.\"$echo arg1 arg2\""
-        self.author = "???"
+        self.help = "$echo | N parameters accepted separated by spaces, bot echoes them back to chat. | Usage: $echo arg1 arg2"
+        self.author = "strongth"
         self.last_updated = "Sept. 28, 2018"
 
     def run(self, event_pack: EventPackage):
