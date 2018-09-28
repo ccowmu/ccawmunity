@@ -11,5 +11,5 @@ class EchoCommand(Command):
         else:
             return "Needs more arguments, for example - \"$echo test\""
 
-    def getHelp(self):
+    def get_help(self):
         return "$echo - N parameters accepted separated by spaces, bot echoes them back to chat.\"$echo arg1 arg2\""
