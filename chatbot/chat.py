@@ -46,7 +46,7 @@ def on_message(room, event):
                 command_string = output[0]
 
                 print("Command detected: {0}".format(command_string))
-                event_package = EventPackage(body=output, roomId=event["room_id"], sender=event["sender"], event=event)
+                event_package = EventPackage(body=output, room_id=event["room_id"], sender=event["sender"], event=event)
 
                 room.send_text(g_commander.run_command(command_string, event_package))
     else:
