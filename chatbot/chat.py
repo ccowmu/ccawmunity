@@ -11,6 +11,10 @@
 # 11 - Wrong room format.
 # 12 - Couldn't find room.
 
+################################################################################
+# NOTHING ACTUALLY WORKS HERE RIGHT NOW :(
+################################################################################
+
 import sys
 import logging
 
@@ -19,10 +23,14 @@ from matrix_client.api import MatrixRequestError
 from requests.exceptions import MissingSchema
 
 from functools import partial
-from commands import *
+from commands.commander import Commander
+
+g_commander = Commander()
 
 # called when a message is recieved.
 def on_message(room, event):
+    global g_commander
+    
     if event['type'] == "m.room.member":
         if event['membership'] == "join":
             print("{0} joined".format(event['content']['displayname']))
@@ -47,7 +55,6 @@ def on_message(room, event):
                     room.send_text("Command not recognized, please try \"$commands\" for available commands")
     else:
         print(event['type'])
-
 
 def main(password):
     client = MatrixClient("https://cclub.cs.wmich.edu")
