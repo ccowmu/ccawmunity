@@ -8,5 +8,8 @@ class Command:
     def run(self, body={}, roomId="", sender="", event={}):
         return "This command doesn't have an implementation yet!"
 
+    def get_name(self):
+        return str(self.name)
+
     def get_help(self):
         return "$default - The default command abstract class. You probably shouldn't be seeing this text."
