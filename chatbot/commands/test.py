@@ -7,5 +7,5 @@ class TestCommand(Command):
     def run(self, body={}, roomId="", sender="", event={}):
         return "Why would have a test command DOLPHIN?"
 
-    def getHelp(self):
+    def get_help(self):
         return "$test - No parameters requirerd, yells at dolphin."
