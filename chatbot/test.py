@@ -1,3 +1,6 @@
 #!/usr/bin/python3
 
-from command import Command
+from commandcenter import Commander
+
+c = Commander()
+print(c.get_loaded_commands())

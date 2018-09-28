@@ -1,4 +1,4 @@
-from .command import Command
+from ..command import Command
 
 class EchoCommand(Command):
     def __init__(self):
