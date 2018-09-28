@@ -4,6 +4,9 @@ from ..eventpackage import EventPackage
 class EchoCommand(Command):
     def __init__(self):
         self.name = "$echo"
+        self.help = "$echo - N parameters accepted separated by spaces, bot echoes them back to chat.\"$echo arg1 arg2\""
+        self.author = "???"
+        self.last_updated = "Sept. 28, 2018"
 
     def run(self, event_pack: EventPackage):
         if(len(event_pack.body) >= 2):
@@ -11,6 +14,3 @@ class EchoCommand(Command):
             return output
         else:
             return "Needs more arguments, for example - \"$echo test\""
-
-    def get_help(self):
-        return "$echo - N parameters accepted separated by spaces, bot echoes them back to chat.\"$echo arg1 arg2\""
