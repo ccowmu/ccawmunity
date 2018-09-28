@@ -9,7 +9,7 @@ To create a new command:
 2. Create a new branch for your command with `git checkout -b <name of your new branch>`
 3. Create a python file called `<your new command>.py` in the `commands` directory.
 4. Inside the new python file, create a custom command class that inherits from the `Command` parent class in the `command` module. See [the template file](./commands/template.py) if you want to see an example. 
-5. When you're done, submit a pull request into the this repo. Be sure to include what your command does within the pull request information.
+5. When you're done, submit a pull request to this repo. Be sure to include what your command does within the pull request information.
 
 ## Attributes
 
@@ -19,7 +19,6 @@ To create a new command:
 `$<command name> | <command purpose> | <usage instructions>`  
 Example:  
 `$info | Display info about a command. | Usage: $info <command (including the dollar sign)>`
-
 
 `self.author` : The author of the command as shown when the `$info` command is queried.
 

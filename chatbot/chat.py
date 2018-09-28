@@ -58,7 +58,7 @@ def main():
     password = getpass.getpass(prompt='Password: ')
 
     try:
-        client.login_with_password("spacedog", password)
+        client.login_with_password("ccawmunity", password)
     except MatrixRequestError as e:
         print(e)
         if e.code == 403:
@@ -73,7 +73,7 @@ def main():
         sys.exit(3)
 
     try:
-        room = client.join_room("#ccawmunity:cclub.cs.wmich.edu")
+        room = client.join_room("#bottest:cclub.cs.wmich.edu")
     except MatrixRequestError as e:
         print(e)
         if e.code == 400:
