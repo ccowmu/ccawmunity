@@ -58,7 +58,7 @@ def main():
     password = getpass.getpass(prompt='Password: ')
 
     try:
-        client.login_with_password("ccawmunity", password)
+        client.login_with_password("ccawmu", password)
     except MatrixRequestError as e:
         print(e)
         if e.code == 403:
