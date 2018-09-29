@@ -13,16 +13,22 @@
 
 import sys
 import logging
+import getpass
 
 from matrix_client.client import MatrixClient
 from matrix_client.api import MatrixRequestError
 from requests.exceptions import MissingSchema
 
 from functools import partial
-from commands import *
+from commandcenter.commander import Commander
+from commandcenter.eventpackage import EventPackage
+
+g_commander = Commander()
 
 # called when a message is recieved.
 def on_message(room, event):
+    global g_commander
+    
     if event['type'] == "m.room.member":
         if event['membership'] == "join":
             print("{0} joined".format(event['content']['displayname']))
@@ -36,21 +42,20 @@ def on_message(room, event):
 
             # create responses for messages starting with $
             if(event['content']['body'][0] == '$'):
-
                 output = event['content']['body'].split(" ")
-                command = output[0]
+                command_string = output[0]
 
-                # if the command is in our dictionary of functions, use it (from commands.py)
-                if command in COMMANDLIST:
-                    room.send_text(COMMANDLIST[command](body=output, roomId=event["room_id"], sender=event["sender"], event=event))
-                else:
-                    room.send_text("Command not recognized, please try \"$commands\" for available commands")
+                print("Command detected: {0}".format(command_string))
+                event_package = EventPackage(body=output, room_id=event["room_id"], sender=event["sender"], event=event)
+
+                room.send_text(g_commander.run_command(command_string, event_package))
     else:
         print(event['type'])
 
-
-def main(password):
+def main():
     client = MatrixClient("https://cclub.cs.wmich.edu")
+
+    password = getpass.getpass(prompt='Password: ')
 
     try:
         client.login_with_password("ccawmu", password)
@@ -68,7 +73,7 @@ def main(password):
         sys.exit(3)
 
     try:
-        room = client.join_room("#ccawmunity:cclub.cs.wmich.edu")
+        room = client.join_room("#bottest:cclub.cs.wmich.edu")
     except MatrixRequestError as e:
         print(e)
         if e.code == 400:
@@ -87,8 +92,5 @@ def main(password):
 if __name__ == '__main__':
 
     logging.basicConfig(level=logging.WARNING)
-    
-    #grab pass as argv for now 
-    password = sys.argv[1] 
      
-    main(password)
+    main()
