@@ -2,7 +2,7 @@
 
 `eventpackage` contains the `EventPackage` class. This is a simple data sturcture to store information about room events together for easy function passing.
 
-See the official matrix documentation for more information.
+See the official [matrix API documentation](https://matrix.org/docs/spec/client_server/latest.html#events) for more information.
 
 ## Attributes
 
