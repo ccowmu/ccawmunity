@@ -1,2 +1,0 @@
-matrix_client==0.3.2
-

@@ -1,1 +1,2 @@
 matrix_client==0.3.2
+ldap3
