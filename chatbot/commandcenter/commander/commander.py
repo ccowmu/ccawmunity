@@ -69,8 +69,8 @@ class Commander:
             try:
                 command = self.commands[command_string]
                 return command.run(event_pack)
-            except:
-                return "!!! An error occured in the execution of {}. !!!".format(command_string)
+            except Exception as e:
+                return "{} failed. Reason: {}".format(command_string, e)
         else:
             return self.command_not_recognized()
             
