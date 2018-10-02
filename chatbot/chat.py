@@ -15,6 +15,8 @@ import sys
 import logging
 import getpass
 
+import botconfig
+
 from matrix_client.client import MatrixClient
 from matrix_client.api import MatrixRequestError
 from requests.exceptions import MissingSchema
@@ -41,7 +43,7 @@ def on_message(room, event):
                 return
 
             # create responses for messages starting with $
-            if(event['content']['body'][0] == '$'):
+            if(event['content']['body'][0] == botconfig.command_prefix):
                 output = event['content']['body'].split(" ")
                 command_string = output[0]
 
@@ -53,12 +55,14 @@ def on_message(room, event):
         print(event['type'])
 
 def main():
-    client = MatrixClient("https://cclub.cs.wmich.edu")
+    print("Connecting to server: {}".format(botconfig.client_url))
+    client = MatrixClient(botconfig.client_url)
 
-    password = getpass.getpass(prompt='Password: ')
+    password = getpass.getpass(prompt='Password for {}: '.format(botconfig.username))
 
     try:
-        client.login_with_password("ccawmu", password)
+        print("Logging in with username: {}".format(botconfig.username))
+        client.login_with_password(botconfig.username, password)
     except MatrixRequestError as e:
         print(e)
         if e.code == 403:
@@ -72,18 +76,20 @@ def main():
         print(e)
         sys.exit(3)
 
-    try:
-        room = client.join_room("#bottest:cclub.cs.wmich.edu")
-    except MatrixRequestError as e:
-        print(e)
-        if e.code == 400:
-            print("Room ID/Alias in the wrong format")
-            sys.exit(11)
-        else:
-            print("Couldn't find room.")
-            sys.exit(12)
+    for room_address in botconfig.rooms:
+        try:
+            room = client.join_room(room_address)
+            room.add_listener(on_message)
+            print("Joined room: {}".format(room_address))
+        except MatrixRequestError as e:
+            print(e)
+            if e.code == 400:
+                print("{}: Room ID/Alias in the wrong format".format(room_address))
+                sys.exit(11)
+            else:
+                print("Couldn't find room: {}".format(room_address))
+                sys.exit(12)
 
-    room.add_listener(on_message)
     client.start_listener_thread()
 
     while True:
