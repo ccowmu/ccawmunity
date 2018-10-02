@@ -11,10 +11,10 @@
 # 11 - Wrong room format.
 # 12 - Couldn't find room.
 
-import os
 import sys
 import logging
 import getpass
+from os import environ
 
 import botconfig
 
@@ -29,12 +29,13 @@ from commandcenter.eventpackage import EventPackage
 g_commander = Commander()
 
 def get_password():
-    # try to find password in the BOTPASSWORD environment variable
-    if botconfig.password_env_variable in os.environ:
-        print("Obtained password from ${} environment variable.".format(botconfig.password_env_variable))
-        return os.environ[botconfig.password_env_variable]
-
-    return getpass.getpass(prompt='Password for {}: '.format(botconfig.username))
+    # try to find password in the BOT_PASSWORD environment variable
+    if "BOT_PASSWORD" in environ and environ["BOT_PASSWORD"] is not "":
+        print("Obtained password from BOT_PASSWORD environment variable.")
+        return environ["BOT_PASSWORD"]
+    else:
+        print("No BOT_PASSWORD environment variable has been set.")
+    return getpass.getpass(prompt='Password required for {}: '.format(botconfig.username))
 
 # called when a message is recieved.
 def on_message(room, event):
