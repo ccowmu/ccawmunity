@@ -11,6 +11,7 @@
 # 11 - Wrong room format.
 # 12 - Couldn't find room.
 
+import os
 import sys
 import logging
 import getpass
@@ -24,6 +25,35 @@ from commandcenter.commander import Commander
 from commandcenter.eventpackage import EventPackage
 
 g_commander = Commander()
+
+def get_password():
+    # try to find password in the BOTPASSWORD environment variable
+    if 'BOTPASSWORD' in os.environ:
+        print("Obtained password from $BOTPASSWORD environment variable.")
+        return os.environ['BOTPASSWORD']
+
+    # try to find password in 'botpass' file in current working directory
+    try:
+        with open('botpassword', 'r') as f:
+            password = f.readline()
+            print("Obtained password from botpass file. (./botpassword)")
+            return password
+    except:
+        # couldn't find file
+        pass
+
+    # user might be running from the root directory of the git repository
+    # try ./chatbot/botpassword
+    try:
+        with open('./chatbot/botpassword', 'r') as f:
+            password = f.readline()
+            print("Obtained password from botpass file. (./chatbot/botpassword)")
+            return password
+    except:
+        # couldn't find file
+        pass
+
+    return getpass.getpass(prompt='Password: ')
 
 # called when a message is recieved.
 def on_message(room, event):
@@ -55,7 +85,7 @@ def on_message(room, event):
 def main():
     client = MatrixClient("https://cclub.cs.wmich.edu")
 
-    password = getpass.getpass(prompt='Password: ')
+    password = get_password()
 
     try:
         client.login_with_password("ccawmu", password)
