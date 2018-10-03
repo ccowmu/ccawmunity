@@ -1,11 +1,15 @@
 # CCAWMUNITY
-## Computer Club Community project
+## Computer Club Community bot project
+
+This project is a bot for our matrix server. It is meant to be newbie friendly. We want anyone to be able to make commands.
 
 # How to create a new command
 
-To create a new command:
-1. Clone this repository.
-2. Create a new branch for your command with `git checkout -b <name of your new branch>`
-3. Create a python file called `<your new command>.py` in the `commands` directory.
-4. Inside the new python file, create a custom command class that inherits from the `Command` parent class in the `command` module. See [the template file](./commands/template.py) if you want to see an example. Check `./commands/README.md` for more details on what your command class should look like.
-5. When you're done, submit a pull request to this repo. Be sure to include what your command does within the pull request information.
+See [the wiki page on how to create a command](https://github.com/ccowmu/ccawmunity/wiki/Creating-a-New-Command).
+
+# How to run the bot yourself
+
+1. Clone the repository. In a terminal, run: `git clone https://github.com/ccowmu/ccawmunity.git`
+2. Install the required libraries. In a terminal, run: `pip3 install -r ./chatbot/requirements.txt`
+3. Configure the bot. Change the values in `./chatbot/config.py` to your liking.
+4. Start the bot. `python3 ./chatbot/chat.py`
