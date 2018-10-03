@@ -14,6 +14,7 @@
 import sys
 import logging
 import getpass
+from os import environ
 
 import botconfig
 
@@ -26,6 +27,15 @@ from commandcenter.commander import Commander
 from commandcenter.eventpackage import EventPackage
 
 g_commander = Commander()
+
+def get_password():
+    # try to find password in the BOT_PASSWORD environment variable
+    if "BOT_PASSWORD" in environ and environ["BOT_PASSWORD"] is not "":
+        print("Obtained password from BOT_PASSWORD environment variable.")
+        return environ["BOT_PASSWORD"]
+    else:
+        print("No BOT_PASSWORD environment variable has been set.")
+    return getpass.getpass(prompt='Password required for {}: '.format(botconfig.username))
 
 # called when a message is recieved.
 def on_message(room, event):
@@ -58,7 +68,7 @@ def main():
     print("Connecting to server: {}".format(botconfig.client_url))
     client = MatrixClient(botconfig.client_url)
 
-    password = getpass.getpass(prompt='Password for {}: '.format(botconfig.username))
+    password = get_password()
 
     try:
         print("Logging in with username: {}".format(botconfig.username))

@@ -26,12 +26,12 @@ class ExpiryCommand(Command):
         if member_UID.isalnum() is not True:
             return "Invalid usage of $expiry: arguments must not contain non-alphanumeric characters"
 
-        LDAP_URI = environ.get("LDAP_URI")
+        LDAP_URL = environ.get("LDAP_URL")
         MEMBER_BASE = environ.get("LDAP_MEMBER_BASE")
         POSIX_DAY = 86400
         DESIRED_FIELDS = ["shadowExpire"]
         tls_config = ldap3.Tls(validate=ssl.CERT_REQUIRED)
-        server = ldap3.Server(LDAP_URI, use_ssl=True, tls=tls_config)
+        server = ldap3.Server(LDAP_URL, use_ssl=True, tls=tls_config)
         conn = ldap3.Connection(server, user=environ.get("LDAP_READONLY_DN"),
                                 password=environ.get("LDAP_READONLY_PASSWORD"),
                                 auto_bind="NONE", read_only=True)
