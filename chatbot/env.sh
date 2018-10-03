@@ -7,7 +7,7 @@
 : <<'END' #begin bash comment
 
 example proper env variable form:
-export MY_ENV_VARIABLE="THIS IS A VALUE"
+export MY_ENV_VARIABLE="THIS-IS-A-VALUE"
 
 example usage of env.sh:
 `source env.sh`
