@@ -11,5 +11,5 @@ See [the wiki page on how to create a command](https://github.com/ccowmu/ccawmun
 
 1. Clone the repository. In a terminal, run: `git clone https://github.com/ccowmu/ccawmunity.git`
 2. Install the required libraries. In a terminal, run: `pip3 install -r ./chatbot/requirements.txt`
-3. Configure the bot. Change the values in `./chatbot/config.py` to your liking.
+3. Configure the bot. Change the values in `./chatbot/botconfig.py` to your liking.
 4. Start the bot. `python3 ./chatbot/chat.py`
