@@ -52,7 +52,7 @@ def on_message(room, event):
             if(event['sender'] == "@ccawmu:cclub.cs.wmich.edu"):
                 return
 
-            # create responses for messages starting with $
+            # create responses for messages starting with the command prefix
             if(event['content']['body'][0] == botconfig.command_prefix):
                 output = event['content']['body'].split(" ")
                 command_string = output[0]
