@@ -1,8 +1,8 @@
-username = "spacedog"
+username = "ccawmu"
 
 client_url = "https://cclub.cs.wmich.edu"
 
-command_prefix = "ABCD"
+command_prefix = "$"
 
 rooms = [
     "#bottest:cclub.cs.wmich.edu",
