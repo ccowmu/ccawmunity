@@ -1,4 +1,4 @@
-username = "ccawmu"
+username = "spacedog"
 
 client_url = "https://cclub.cs.wmich.edu"
 

@@ -26,7 +26,7 @@ from functools import partial
 from commandcenter.commander import Commander
 from commandcenter.eventpackage import EventPackage
 
-g_commander = Commander()
+g_commander = Commander(botconfig.command_prefix)
 
 def get_password():
     # try to find password in the BOT_PASSWORD environment variable
