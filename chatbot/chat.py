@@ -23,8 +23,11 @@ from matrix_client.api import MatrixRequestError
 from requests.exceptions import MissingSchema
 
 from functools import partial
+
 from commandcenter.commander import Commander
 from commandcenter.eventpackage import EventPackage
+
+from listenercenter.listenermanager import ListenerManager
 
 g_commander = Commander()
 
@@ -86,10 +89,14 @@ def main():
         print(e)
         sys.exit(3)
 
+    # room dictionary that will be passed to the listener manager
+    rooms = {}
+
     for room_address in botconfig.rooms:
         try:
             room = client.join_room(room_address)
             room.add_listener(on_message)
+            rooms[room_address] = room
             print("Joined room: {}".format(room_address))
         except MatrixRequestError as e:
             print(e)
@@ -101,6 +108,10 @@ def main():
                 sys.exit(12)
 
     client.start_listener_thread()
+
+    listener = ListenerManager(rooms)
+
+    listener.start_listener_thread()
 
     while True:
         msg = input()
