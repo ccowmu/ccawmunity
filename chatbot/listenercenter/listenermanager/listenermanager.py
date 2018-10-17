@@ -61,6 +61,8 @@ class ListenerManager:
 
 class ListenerHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
         print("I heard a GET!")
 
     def do_POST(self):
@@ -75,5 +77,12 @@ class ListenerHandler(BaseHTTPRequestHandler):
                 g_listener = g_header_dict[header]
                 print(f"Detected {header}, selecting {g_listener.name}.")
                 break
+        
+        # save request body, if present
+        if "Content-Length" in self.headers:
+            g_body = self.rfile.read(int(self.headers["Content-Length"]))
+        else:
+            g_body = ''
 
-        g_body = self.rfile.read(32)
+        self.send_response(200)
+        self.end_headers()
