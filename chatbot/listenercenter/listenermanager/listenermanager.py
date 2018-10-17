@@ -2,10 +2,10 @@ from threading import Thread
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 
-from ..listener import Listener
-
 # important! this is where all the listener subclasses are discovered.
 from ..listeners import *
+
+from ..listener import Listener
 
 g_body = ''
 g_listener = Listener()
