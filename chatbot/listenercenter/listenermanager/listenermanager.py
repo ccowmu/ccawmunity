@@ -1,6 +1,7 @@
 from threading import Thread
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
+import json
 
 # important! this is where all the listener subclasses are discovered.
 from ..listeners import *
@@ -71,18 +72,64 @@ class ListenerHandler(BaseHTTPRequestHandler):
 
         print("I heard a POST!")
 
-        print("Looking for headers in dict...")
-        for header in self.headers:
-            if header in g_header_dict:
-                g_listener = g_header_dict[header]
-                print(f"Detected {header}, selecting {g_listener.name}.")
-                break
-        
         # save request body, if present
         if "Content-Length" in self.headers:
             g_body = self.rfile.read(int(self.headers["Content-Length"]))
         else:
             g_body = ''
 
+        print("Checking for known identity...")
+
+        self.check_identity('[echo] [is] [cool] = 1', g_body)
+
+        # print("Looking for headers in dict...")
+        # for header in self.headers:
+        #     if header in g_header_dict:
+        #         g_listener = g_header_dict[header]
+        #         print(f"Detected {header}, selecting {g_listener.name}.")
+        #         break
+
         self.send_response(200)
         self.end_headers()
+
+    def check_identity(self, id, body):
+        # id = [echo] [is] [cool] = 1
+        # body = {
+        #     echo {
+        #         is {
+        #             cool: 1
+        #         }
+        #     }
+        # }
+
+        dictionary = json.loads(body)
+        
+        id = id.replace(" ", '')
+        print(f"id: {id}")
+
+        value = str(id.split('=')[1])
+        print(f"Desired value: {value}")
+        
+        position = 0
+
+        while position != -1:
+            openb = id.find('[', position)
+            closeb = id.find(']', openb)
+            position = id.find('[', closeb)
+
+            key = id[openb + 1 : closeb]
+
+            print(key)
+
+            if key in dictionary:
+                dictionary = dictionary[key]
+        
+        print(dictionary)
+
+        if str(dictionary) == str(value):
+            print("Match!")
+        else:
+            print("Mismatch!")
+
+
+

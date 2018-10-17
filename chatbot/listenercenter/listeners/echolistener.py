@@ -10,6 +10,7 @@ class EchoListener(Listener):
         self.headers = [
             'X-Listener-Echo'
         ]
+        self.identity = '[test] = 1'
 
     def process(self, body):
         return body.decode('utf-8')
