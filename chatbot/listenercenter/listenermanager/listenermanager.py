@@ -2,30 +2,21 @@ from threading import Thread
 from http.server import HTTPServer
 from http.server import BaseHTTPRequestHandler
 
-class Listener:
-    def __init__(self):
-        self.name = "l_default"
-        self.rooms = []
-        self.headers = []
-    
-    def process(self, body):
-        print("Process")
+from ..listener import Listener
 
-    def __str__(self):
-        return str(self.name)
+# important! this is where all the listener subclasses are discovered.
+from ..listeners import *
 
 g_body = ''
 g_listener = Listener()
 g_header_dict = dict()
 
 class ListenerManager:
-    def __init__(self, rooms):
+    def __init__(self, rooms, port):
         print("Starting listener manager...")
         self.rooms = rooms # dict of matrix room objects: { room_address : room_object }
-        self.server = HTTPServer(('', 5170), ListenerHandler) # minimal http server
-        self.thread = Thread(target=self.listen_forever) # thread that the server is running on
-
-        print(self.server.server_address)
+        self.port = port # port the server will listen on
+        self.server = HTTPServer(('', self.port), ListenerHandler) # minimal http server
 
         # build global header dict
         global g_header_dict
@@ -35,31 +26,35 @@ class ListenerManager:
             for header in listener.headers:
                 g_header_dict[header] = listener
 
-        print("Listener manager knows about these headers:")
-        for header in g_header_dict:
-            print(header)
+        print("The listener manager knows about these headers:")
+        for header, listener in g_header_dict.items():
+            print(f"{header} -> {listener.get_name()}")
 
-        print("Listener manager knows about these rooms:")
+        print("The listener manager knows about these rooms:")
         for room_address in rooms:
             print(room_address)
 
     def start_listener_thread(self):
-        self.thread.start()
+        print(f"Started listening on port {self.port}")
+        Thread(target=self._listen_forever, daemon=True).start()
 
-    def listen_forever(self):
+    def _listen_forever(self):
         while True:
             self.server.handle_request()
-            self.process_request()
+            self._process_results()
 
-    def process_request(self):
+    def _process_results(self):
         global g_listener
         
         if g_listener is not None:
             body = g_body
             listener = g_listener
 
-            for room in [self.rooms[r] for r in self.rooms if r in listener.rooms]:
-                room.send_text(listener.process(body))
+            # for every room that the listener has registered, send the response.
+            for room_address in [r for r in self.rooms if r in listener.get_rooms()]:
+                print(f"Sending response to {room_address}...")
+                # self.rooms[room_address].send_text(listener.process(body))
+                print(listener.process(body))
 
         else:
             print("No listener detected!")
@@ -82,30 +77,3 @@ class ListenerHandler(BaseHTTPRequestHandler):
                 break
 
         g_body = self.rfile.read(32)
-
-class GithubListener(Listener):
-    def __init__(self):
-        self.name = "l_github"
-        self.rooms = ['#bottest:cclub.cs.wmich.edu']
-        self.headers = [
-            'X-Github-Event',
-            'X-Github-Delivery',
-            'X-Hub-Signature'
-        ]
-
-    def process(self, body):
-        return body
-
-class EchoListener(Listener):
-    def __init__(self):
-        self.name = "l_echo"
-        self.rooms = [
-            # '#bottest:cclub.cs.wmich.edu',
-            '#ccawmunity:cclub.cs.wmich.edu'
-            ]
-        self.headers = [
-            'X-Listener-Echo'
-        ]
-
-    def process(self, body):
-        return body.decode('utf-8')

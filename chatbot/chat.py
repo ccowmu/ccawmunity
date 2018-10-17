@@ -109,12 +109,15 @@ def main():
 
     client.start_listener_thread()
 
-    listener = ListenerManager(rooms)
+    listener = ListenerManager(rooms, 5170)
 
     listener.start_listener_thread()
 
-    while True:
-        msg = input()
+    try:
+        while True:
+            msg = input()
+    except KeyboardInterrupt:
+        print("Shutting down.")
 
 if __name__ == '__main__':
 
