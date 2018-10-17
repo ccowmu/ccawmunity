@@ -22,7 +22,7 @@ class ListenerManager:
     def __init__(self, rooms):
         print("Starting listener manager...")
         self.rooms = rooms # dict of matrix room objects: { room_address : room_object }
-        self.server = HTTPServer(('', 8978), ListenerHandler) # minimal http server
+        self.server = HTTPServer(('', 5170), ListenerHandler) # minimal http server
         self.thread = Thread(target=self.listen_forever) # thread that the server is running on
 
         print(self.server.server_address)
