@@ -91,6 +91,7 @@ class ListenerHandler(BaseHTTPRequestHandler):
             found = self.check_identity(identity, g_body)
             if found:
                 g_listener = listener
+                print(f"Listener: found {g_listener.name}.")
 
         self.send_response(200)
         self.end_headers()
@@ -128,6 +129,6 @@ class ListenerHandler(BaseHTTPRequestHandler):
                 print("Mismatch!")
                 return False
         except Exception as e:
-            print("There was an error in the identity matching function. Treating as mismatch.")
-            print(e)
+            # print("There was an error in the identity matching function. Treating as mismatch.")
+            # print(e)
             return False

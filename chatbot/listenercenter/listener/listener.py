@@ -1,3 +1,7 @@
+# This is the parent class for listeners.
+# If you are trying to make a custom listener, you shouldn't be editing this file.
+# Instead, make a .py file in the listeners directory.
+
 class Listener:
     def __init__(self):
         self.name = "l_default"
