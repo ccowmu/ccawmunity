@@ -1,7 +1,4 @@
 {
-	"echo": {
-		"is": {
-			"cool": 1
-		}
-	}
+	"type" : "echo",
+	"body" : "hey"
 }

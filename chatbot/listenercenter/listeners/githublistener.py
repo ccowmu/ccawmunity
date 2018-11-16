@@ -2,6 +2,7 @@ from ..listener import Listener
 
 class GithubListener(Listener):
     def __init__(self):
+        super().__init__()
         self.name = "l_github"
         self.rooms = ['#bottest:cclub.cs.wmich.edu']
         self.headers = [

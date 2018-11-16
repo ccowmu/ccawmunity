@@ -2,7 +2,7 @@ class Listener:
     def __init__(self):
         self.name = "l_default"
         self.rooms = []
-        self.headers = []
+        self.identity = ""
     
     def process(self, body):
         print("Process")

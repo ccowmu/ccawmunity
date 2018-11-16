@@ -4,13 +4,13 @@ from http.server import BaseHTTPRequestHandler
 import json
 
 # important! this is where all the listener subclasses are discovered.
-from ..listeners import *
-
 from ..listener import Listener
+from ..listeners import *
 
 g_body = ''
 g_listener = Listener()
 g_header_dict = dict()
+g_identity_dict = dict()
 
 class ListenerManager:
     def __init__(self, rooms, port):
@@ -19,17 +19,16 @@ class ListenerManager:
         self.port = port # port the server will listen on
         self.server = HTTPServer(('', self.port), ListenerHandler) # minimal http server
 
-        # build global header dict
-        global g_header_dict
+        # build global identity dict
+        global g_identity_dict
 
         for l in Listener.__subclasses__():
             listener = l()
-            for header in listener.headers:
-                g_header_dict[header] = listener
+            g_identity_dict[listener.identity] = listener
 
-        print("The listener manager knows about these headers:")
-        for header, listener in g_header_dict.items():
-            print(f"{header} -> {listener.get_name()}")
+        print("The listener manager knows about these identities")
+        for identity, listener in g_identity_dict.items():
+            print(f"{identity} -> {listener.get_name()}")
 
         print("The listener manager knows about these rooms:")
         for room_address in rooms:
@@ -79,57 +78,46 @@ class ListenerHandler(BaseHTTPRequestHandler):
             g_body = ''
 
         print("Checking for known identity...")
-
-        self.check_identity('[echo] [is] [cool] = 1', g_body)
-
-        # print("Looking for headers in dict...")
-        # for header in self.headers:
-        #     if header in g_header_dict:
-        #         g_listener = g_header_dict[header]
-        #         print(f"Detected {header}, selecting {g_listener.name}.")
-        #         break
+        for identity, listener in g_identity_dict.items():
+            found = self.check_identity(identity, g_body)
+            if found:
+                print(listener.process(json.loads(g_body)))
 
         self.send_response(200)
         self.end_headers()
 
     def check_identity(self, id, body):
-        # id = [echo] [is] [cool] = 1
-        # body = {
-        #     echo {
-        #         is {
-        #             cool: 1
-        #         }
-        #     }
-        # }
+        # try-except block so evil body strings don't kill the bot
 
-        dictionary = json.loads(body)
-        
-        id = id.replace(" ", '')
-        print(f"id: {id}")
+        try:
+            dictionary = json.loads(body)
+            
+            id = id.replace(" ", '')
+            print(f"id: {id}")
 
-        value = str(id.split('=')[1])
-        print(f"Desired value: {value}")
-        
-        position = 0
+            value = str(id.split('=')[1])
+            print(f"Desired value: {value}")
+            
+            position = 0
 
-        while position != -1:
-            openb = id.find('[', position)
-            closeb = id.find(']', openb)
-            position = id.find('[', closeb)
+            while position != -1:
+                openb = id.find('[', position)
+                closeb = id.find(']', openb)
+                position = id.find('[', closeb)
 
-            key = id[openb + 1 : closeb]
+                key = id[openb + 1 : closeb]
 
-            print(key)
+                print(key)
 
-            if key in dictionary:
-                dictionary = dictionary[key]
-        
-        print(dictionary)
-
-        if str(dictionary) == str(value):
-            print("Match!")
-        else:
-            print("Mismatch!")
-
-
-
+                if key in dictionary:
+                    dictionary = dictionary[key]
+            
+            if str(dictionary) == str(value):
+                print("Match!")
+                return True
+            else:
+                print("Mismatch!")
+                return False
+        except:
+            print("There was an error in the identity matching function. Returning False.")
+            return False

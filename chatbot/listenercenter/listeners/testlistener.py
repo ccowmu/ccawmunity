@@ -2,14 +2,13 @@ from ..listener import Listener
 
 class TestListener(Listener):
     def __init__(self):
+        super().__init__()
         self.name = "l_test"
         self.rooms = [
             '#bottest:cclub.cs.wmich.edu',
-            '#ccawmunity:cclub.cs.wmich.edu'
+            # '#ccawmunity:cclub.cs.wmich.edu'
             ]
-        self.headers = [
-            'X-Listener-Test'
-        ]
+        self.identity = '[test][type] = 1'
 
     def process(self, body):
-        return 'Test listener.'
+        return 'Test listener 1.'

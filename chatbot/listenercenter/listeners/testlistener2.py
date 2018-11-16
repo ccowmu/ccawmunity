@@ -1,14 +1,14 @@
 from ..listener import Listener
 
-class EchoListener(Listener):
+class TestListener2(Listener):
     def __init__(self):
         super().__init__()
-        self.name = "l_echo"
+        self.name = "l_test2"
         self.rooms = [
             '#bottest:cclub.cs.wmich.edu',
             # '#ccawmunity:cclub.cs.wmich.edu'
             ]
-        self.identity = '[type] = echo'
+        self.identity = '[test][type] = 2'
 
     def process(self, body):
-        return body["body"]
+        return 'Test listener 2.'
