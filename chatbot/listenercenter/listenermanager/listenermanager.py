@@ -58,6 +58,9 @@ class ListenerManager:
                 except Exception as e:
                     print("{} failed. Reason: {}".format(g_listener.name, e))
 
+            # reset listener
+            g_listener = None
+
         else:
             print("No listener detected!")
 
