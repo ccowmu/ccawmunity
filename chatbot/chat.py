@@ -56,13 +56,9 @@ def on_message(room, event):
                 return
 
             # create responses for messages starting with the command prefix
-<<<<<<< HEAD
-            if(event['content']['body'][0] == botconfig.command_prefix):
-=======
             # compares the first x characters of a message to the command prefix,
             # where x = len(command.prefix)
             if(event['content']['body'][0:len(botconfig.command_prefix)] == botconfig.command_prefix):
->>>>>>> spacedog-prefix-fix
                 output = event['content']['body'].split(" ")
                 command_string = output[0]
 
