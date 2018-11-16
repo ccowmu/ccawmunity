@@ -5,7 +5,7 @@ class Listener:
         self.identity = ""
     
     def process(self, body):
-        print("Process")
+        print("This is coming from the default process event in Listener superclass, which probably shouldn't have happened.")
 
     def __str__(self):
         return str(self.name)
@@ -15,6 +15,3 @@ class Listener:
 
     def get_rooms(self):
         return self.rooms
-
-    def get_headers(self):
-        return self.headers

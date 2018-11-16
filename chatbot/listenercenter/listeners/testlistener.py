@@ -1,3 +1,8 @@
+# Test Listener
+# by spacedog
+# Simply used to test if listener functionality is working
+# To test: curl -d '{"type":"test"}' {ip}:{port}
+
 from ..listener import Listener
 
 class TestListener(Listener):
@@ -5,10 +10,9 @@ class TestListener(Listener):
         super().__init__()
         self.name = "l_test"
         self.rooms = [
-            '#bottest:cclub.cs.wmich.edu',
-            # '#ccawmunity:cclub.cs.wmich.edu'
+            '#bottest:cclub.cs.wmich.edu'
             ]
-        self.identity = '[test][type] = 1'
+        self.identity = '[type] = test'
 
     def process(self, body):
-        return 'Test listener 1.'
+        return 'Test result: the listener system appears to be working!'

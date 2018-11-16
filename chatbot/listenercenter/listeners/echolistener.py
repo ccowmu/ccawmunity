@@ -1,3 +1,7 @@
+# Echo Listener
+# By spacedog
+# Simply returns the contents of body["message"]
+
 from ..listener import Listener
 
 class EchoListener(Listener):
@@ -5,10 +9,9 @@ class EchoListener(Listener):
         super().__init__()
         self.name = "l_echo"
         self.rooms = [
-            '#bottest:cclub.cs.wmich.edu',
-            # '#ccawmunity:cclub.cs.wmich.edu'
+            '#bottest:cclub.cs.wmich.edu'
             ]
         self.identity = '[type] = echo'
 
     def process(self, body):
-        return body["body"]
+        return body["message"]
