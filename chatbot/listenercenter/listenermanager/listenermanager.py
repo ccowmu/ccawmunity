@@ -53,8 +53,10 @@ class ListenerManager:
             # for every room that the listener has registered, send the response.
             for room_address in [r for r in self.rooms if r in listener.get_rooms()]:
                 print(f"Sending response to {room_address}...")
-                # self.rooms[room_address].send_text(listener.process(body))
-                print(listener.process(body))
+                try:
+                    self.rooms[room_address].send_text(listener.process(json.loads(body)))
+                except Exception as e:
+                    print("{} failed. Reason: {}".format(g_listener.name, e))
 
         else:
             print("No listener detected!")
@@ -63,13 +65,13 @@ class ListenerHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        print("I heard a GET!")
+        print("Listener: Detected a GET")
 
     def do_POST(self):
         global g_listener
         global g_body
 
-        print("I heard a POST!")
+        print("Listener: Detected a POST")
 
         # save request body, if present
         if "Content-Length" in self.headers:
@@ -77,11 +79,18 @@ class ListenerHandler(BaseHTTPRequestHandler):
         else:
             g_body = ''
 
+        print("Request body:")
+
+        if (len(g_body) < 80):
+            print(g_body)
+        else:
+            print(g_body[:80])
+
         print("Checking for known identity...")
         for identity, listener in g_identity_dict.items():
             found = self.check_identity(identity, g_body)
             if found:
-                print(listener.process(json.loads(g_body)))
+                g_listener = listener
 
         self.send_response(200)
         self.end_headers()
@@ -93,10 +102,10 @@ class ListenerHandler(BaseHTTPRequestHandler):
             dictionary = json.loads(body)
             
             id = id.replace(" ", '')
-            print(f"id: {id}")
+            # print(f"id: {id}")
 
             value = str(id.split('=')[1])
-            print(f"Desired value: {value}")
+            # print(f"Desired value: {value}")
             
             position = 0
 
@@ -107,17 +116,17 @@ class ListenerHandler(BaseHTTPRequestHandler):
 
                 key = id[openb + 1 : closeb]
 
-                print(key)
+                # print(key)
 
                 if key in dictionary:
                     dictionary = dictionary[key]
             
             if str(dictionary) == str(value):
-                print("Match!")
+                # print("Match!")
                 return True
             else:
-                print("Mismatch!")
+                # print("Mismatch!")
                 return False
         except:
-            print("There was an error in the identity matching function. Returning False.")
+            # print("There was an error in the identity matching function. Treating as mismatch.")
             return False

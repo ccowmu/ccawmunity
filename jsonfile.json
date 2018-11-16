@@ -1,4 +1,4 @@
 {
 	"type" : "echo",
-	"body" : "hey"
+	"message" : "$test"
 }
