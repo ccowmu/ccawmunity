@@ -102,7 +102,7 @@ class ListenerHandler(BaseHTTPRequestHandler):
             dictionary = json.loads(body)
             
             id = id.replace(" ", '')
-            # print(f"id: {id}")
+            print(f"id: {id}")
 
             value = str(id.split('=')[1])
             # print(f"Desired value: {value}")
@@ -122,11 +122,12 @@ class ListenerHandler(BaseHTTPRequestHandler):
                     dictionary = dictionary[key]
             
             if str(dictionary) == str(value):
-                # print("Match!")
+                print("Match!")
                 return True
             else:
-                # print("Mismatch!")
+                print("Mismatch!")
                 return False
-        except:
-            # print("There was an error in the identity matching function. Treating as mismatch.")
+        except Exception as e:
+            print("There was an error in the identity matching function. Treating as mismatch.")
+            print(e)
             return False

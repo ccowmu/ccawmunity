@@ -83,7 +83,7 @@ class Commander:
     def get_info(self, command_string):
         if command_string in self.commands:
             command = self.commands[command_string]
-            output = "Info for `" + command_string + "`...\n"
+            output = "Info for " + command_string + "...\n"
             output += "Last updated: " + command.get_last_updated() + "\n"
             output += "Author: " + command.get_author() + "\n"
             return output
