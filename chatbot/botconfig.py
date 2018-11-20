@@ -8,3 +8,6 @@ rooms = [
     "#bottest:cclub.cs.wmich.edu",
     "#ccawmunity:cclub.cs.wmich.edu"
 ]
+
+# listener port
+listener_port = 9999

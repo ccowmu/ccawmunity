@@ -1,6 +1,8 @@
 from ..command import Command
 from ..eventpackage import EventPackage
 
+import botconfig
+
 import requests
 import json
 
@@ -15,6 +17,6 @@ class TestListenersCommand(Command):
 
     def run(self, event_pack: EventPackage):
 
-        requests.post("http://localhost:5170", json={"type":"test"})
+        requests.post("http://localhost:" + str(botconfig.listener_port), json={"type":"test"})
 
         return "Sent test."

@@ -111,7 +111,7 @@ def main():
 
     client.start_listener_thread()
 
-    listener = ListenerManager(rooms, 5170)
+    listener = ListenerManager(rooms, botconfig.listener_port)
 
     listener.start_listener_thread()
 
