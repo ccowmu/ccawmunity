@@ -13,7 +13,8 @@ class TestGithubListener(Listener):
 
         # list of rooms that this listener is allowed to post in
         self.rooms = [
-            '#bottest:cclub.cs.wmich.edu'
+            '#bottest:cclub.cs.wmich.edu',
+            '#ccawmunity:cclub.cs.wmich.edu'
             ]
 
         self.identity = '[repository][full_name] = verdog/listenertest'
