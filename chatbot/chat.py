@@ -117,7 +117,7 @@ def main():
 
     try:
         while True:
-            msg = input()
+            pass
     except KeyboardInterrupt:
         print("Shutting down.")
 
