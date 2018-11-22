@@ -14,7 +14,7 @@ class Template(Listener):
         # list of rooms that this listener is allowed to post in
         self.rooms = [
             '#bottest:cclub.cs.wmich.edu'
-            ]
+        ]
 
         # the "identity string"
         # this string tells the listener manager what kinds of request bodies activate this listener.

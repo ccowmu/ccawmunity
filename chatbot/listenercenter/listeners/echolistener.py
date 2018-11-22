@@ -10,7 +10,7 @@ class EchoListener(Listener):
         self.name = "l_echo"
         self.rooms = [
             '#bottest:cclub.cs.wmich.edu'
-            ]
+        ]
         self.identity = '[type] = echo'
 
     def process(self, body):

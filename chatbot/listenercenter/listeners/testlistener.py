@@ -11,7 +11,7 @@ class TestListener(Listener):
         self.name = "l_test"
         self.rooms = [
             '#bottest:cclub.cs.wmich.edu'
-            ]
+        ]
         self.identity = '[type] = test'
 
     def process(self, body):

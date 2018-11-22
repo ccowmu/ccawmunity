@@ -1,27 +1,36 @@
-# this file serves as a quick reference for the structure of a custom listener class.
-
 # Github Listener
 # By spacedog
-# tests listening to an actual webhook
+# Sends information about events that happen in the ccawmunity repository.
 
 from ..listener import Listener
 
-class TestGithubListener(Listener):
+class GithubListener(Listener):
     def __init__(self):
         super().__init__() # important!
-        self.name = "l_test_github" # name of the listener.
+        self.name = "l_github_ccawmunity" # name of the listener.
 
         # list of rooms that this listener is allowed to post in
         self.rooms = [
-            '#bottest:cclub.cs.wmich.edu',
-            '#ccawmunity:cclub.cs.wmich.edu'
-            ]
+            # '#ccawmunity:cclub.cs.wmich.edu'
+            "bottest:cclub.cs.wmich.edu"
+        ]
 
         self.identity = '[repository][full_name] = verdog/listenertest'
 
     def process(self, body):
-        # this is what happens when the listener is activated.
-        # the body argument is the body of the request that was detected.
-        # return a string, which will be sent to the chat rooms listed in __init__
+
+        output_str = ""
         
-        return "New issue in super secret repository " + body["repository"]["full_name"]
+        if "issue" in body:
+            # an issue event
+            if body["action"] == "opened" or body["action"] == "reopened":
+                # an issue was opened/reopened
+                output_str  = "New issue in " + body["repository"]["name"] + ": " + body["issue"]["title"] + "\n"
+                output_str += body["issue"]["html_url"]
+        elif "pull_request" in body:
+            # a pull request event
+            output_str  = "@room:\n" 
+            output_str += "New pull request in " + body["repository"]["name"] + ": " + body["pull_request"]["title"] + "\n"
+            output_str += body["pull_request"]["html_url"]
+
+        return output_str
