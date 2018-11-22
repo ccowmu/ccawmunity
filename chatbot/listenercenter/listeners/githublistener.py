@@ -11,14 +11,12 @@ class GithubListener(Listener):
 
         # list of rooms that this listener is allowed to post in
         self.rooms = [
-            # '#ccawmunity:cclub.cs.wmich.edu'
-            "#bottest:cclub.cs.wmich.edu"
+            '#ccawmunity:cclub.cs.wmich.edu'
         ]
 
-        self.identity = '[repository][full_name] = verdog/listenertest'
+        self.identity = '[repository][full_name] = ccowmu/ccawmunity'
 
     def process(self, body):
-
         output_str = ""
         
         if "issue" in body:

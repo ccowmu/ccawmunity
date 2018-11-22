@@ -59,7 +59,8 @@ class ListenerManager:
                         print(f"Sending response to {room_address}...")
                         self.rooms[room_address].send_text(listener.process(json.loads(body)))
                     else:
-                        print(f"Listener process returned an empty string. Not sending to {room_address}")
+                        print(f"Listener {g_listener.name} process returned an empty string. Not sending any message.")
+                        break
             except Exception as e:
                 print("{} failed. Reason: {}".format(g_listener.name, e))
 
