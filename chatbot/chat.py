@@ -23,10 +23,13 @@ from matrix_client.api import MatrixRequestError
 from requests.exceptions import MissingSchema
 
 from functools import partial
+
 from commandcenter.commander import Commander
 from commandcenter.eventpackage import EventPackage
 
-g_commander = Commander()
+from listenercenter.listenermanager import ListenerManager
+
+g_commander = Commander(botconfig.command_prefix)
 
 def get_password():
     # try to find password in the BOT_PASSWORD environment variable
@@ -53,7 +56,9 @@ def on_message(room, event):
                 return
 
             # create responses for messages starting with the command prefix
-            if(event['content']['body'][0] == botconfig.command_prefix):
+            # compares the first x characters of a message to the command prefix,
+            # where x = len(command.prefix)
+            if(event['content']['body'][0:len(botconfig.command_prefix)] == botconfig.command_prefix):
                 output = event['content']['body'].split(" ")
                 command_string = output[0]
 
@@ -86,10 +91,14 @@ def main():
         print(e)
         sys.exit(3)
 
+    # room dictionary that will be passed to the listener manager
+    rooms = {}
+
     for room_address in botconfig.rooms:
         try:
             room = client.join_room(room_address)
             room.add_listener(on_message)
+            rooms[room_address] = room
             print("Joined room: {}".format(room_address))
         except MatrixRequestError as e:
             print(e)
@@ -102,8 +111,15 @@ def main():
 
     client.start_listener_thread()
 
-    while True:
-        msg = input()
+    listener = ListenerManager(rooms, botconfig.listener_port)
+
+    listener.start_listener_thread()
+
+    try:
+        while True:
+            msg = input()
+    except KeyboardInterrupt:
+        print("Shutting down.")
 
 if __name__ == '__main__':
 
