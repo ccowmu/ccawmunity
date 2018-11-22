@@ -87,7 +87,7 @@ class ListenerHandler(BaseHTTPRequestHandler):
         if (len(g_body) < 80):
             print(g_body)
         else:
-            print(g_body[:80] + "...")
+            print(str(g_body[:80]) + "...")
 
         print("Checking for known identity...")
         for identity, listener in g_identity_dict.items():
