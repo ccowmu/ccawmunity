@@ -22,5 +22,5 @@ class TestGithubListener(Listener):
         # this is what happens when the listener is activated.
         # the body argument is the body of the request that was detected.
         # return a string, which will be sent to the chat rooms listed in __init__
-        print(body)
-        return ""
+        
+        return "New issue in super secret repository " + body["repository"]["full_name"]
