@@ -50,13 +50,18 @@ class ListenerManager:
             body = g_body
             listener = g_listener
 
-            # for every room that the listener has registered, send the response.
-            for room_address in [r for r in self.rooms if r in listener.get_rooms()]:
-                print(f"Sending response to {room_address}...")
-                try:
-                    self.rooms[room_address].send_text(listener.process(json.loads(body)))
-                except Exception as e:
-                    print("{} failed. Reason: {}".format(g_listener.name, e))
+            try:
+                chat_text = listener.process(json.loads(body))
+
+                # for every room that the listener has registered, send the response.
+                for room_address in [r for r in self.rooms if r in listener.get_rooms()]:
+                    if (chat_text != ""):
+                        print(f"Sending response to {room_address}...")
+                        self.rooms[room_address].send_text(listener.process(json.loads(body)))
+                    else:
+                        print(f"Listener process returned an empty string. Not sending to {room_address}")
+            except Exception as e:
+                print("{} failed. Reason: {}".format(g_listener.name, e))
 
             # reset listener
             g_listener = None
