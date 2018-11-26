@@ -29,7 +29,7 @@ from commandcenter.eventpackage import EventPackage
 
 from listenercenter.listenermanager import ListenerManager
 
-g_commander = Commander(botconfig.command_prefix)
+g_commander = Commander(botconfig.command_prefix, botconfig.command_timeout)
 
 def get_password():
     # try to find password in the BOT_PASSWORD environment variable
