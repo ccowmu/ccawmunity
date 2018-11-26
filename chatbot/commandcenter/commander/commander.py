@@ -72,7 +72,7 @@ class Commander:
                 # terminating the process corrupts the pipe created above. 
                 # this is fine as long as we don't use it again.
                 p.terminate() 
-                return self.command_timed_out()
+                return self.command_timed_out(command.get_name())
 
             # if the process wasn't terminated, it's return result will be in the pipe.
             return recv_end.recv()
@@ -112,5 +112,5 @@ class Commander:
     def command_not_recognized(self):
         return "Command not recognized, please try \"$help\" for available commands".replace("$", self.prefix)
 
-    def command_timed_out(self):
-        return f"Command timed out. (Command time limit is {self.timeout} seconds.)"
+    def command_timed_out(self, command_string):
+        return f"{command_string} timed out. (Command time limit is {self.timeout} seconds.)"
