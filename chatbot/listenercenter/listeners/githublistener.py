@@ -25,10 +25,14 @@ class GithubListener(Listener):
                 # an issue was opened/reopened
                 output_str  = "New issue in " + body["repository"]["name"] + ": " + body["issue"]["title"] + "\n"
                 output_str += body["issue"]["html_url"]
-        elif "pull_request" in body:
-            # a pull request event
-            output_str  = "@room:\n" 
-            output_str += "New pull request in " + body["repository"]["name"] + ": " + body["pull_request"]["title"] + "\n"
-            output_str += body["pull_request"]["html_url"]
+        elif "pull_request" in body and "action" in body:
+            if body["action"] == "opened" or body["action"] == "reopened":
+                # a pull request event
+                output_str  = "@room:\n" 
+                output_str += "New pull request in " + body["repository"]["name"] + ": " + body["pull_request"]["title"] + "\n"
+                output_str += body["pull_request"]["html_url"]
+            else:
+                # PR event, such as a commit or review request. we don't want to send this
+                pass
 
         return output_str
