@@ -1,5 +1,6 @@
 import sys
 import importlib
+import multiprocessing
 
 from os import listdir
 from os.path import isfile, join, abspath, dirname
@@ -13,9 +14,10 @@ from ..command import Command
 from ..eventpackage import EventPackage
 
 class Commander:
-    def __init__(self, prefix = "$"):
+    def __init__(self, prefix = "$", timeout = 3):
         self.commands = {}
         self.prefix = prefix
+        self.timeout = timeout
 
         print("Prefix: " + self.prefix)
 
@@ -51,13 +53,39 @@ class Commander:
                 return "You must specify a command!"
 
         if command_string_normalized in self.commands:
-            try:
-                command = self.commands[command_string_normalized]
-                return command.run(event_pack)
-            except Exception as e:
-                return "{} failed. Reason: {}".format(command_string_normalized, e)
+            command = self.commands[command_string_normalized]
+
+            # create a pipe to retrieve the result
+            recv_end, send_end = multiprocessing.Pipe(False)
+
+            # start the command on a new process
+            p = multiprocessing.Process(target=self.start_command_process, args=(command, event_pack, send_end))
+
+            # start the process, timeout after self.timeout seconds
+            p.start()
+            p.join(self.timeout)
+
+            # if the process is still alive after self.timeout seconds, kill it
+            if p.is_alive():
+                print(f"Commander: killing a command after timeout. ({self.timeout} seconds)")
+                # NOTE:
+                # terminating the process corrupts the pipe created above. 
+                # this is fine as long as we don't use it again.
+                p.terminate() 
+                return self.command_timed_out()
+
+            # if the process wasn't terminated, it's return result will be in the pipe.
+            return recv_end.recv()
         else:
             return self.command_not_recognized()
+
+    def start_command_process(self, command, event_pack, pipe):
+        # encapsulated in a new function so that the commands can still use "return" to send their chat strings back.
+        # they will never know the evil that lies within the commander
+        try:
+            pipe.send(command.run(event_pack))
+        except Exception as e:
+            pipe.send("{} failed. Reason: {}".format(command.get_name(), e))
             
     def get_help(self, command_string):
         if command_string in self.commands:
@@ -83,3 +111,6 @@ class Commander:
 
     def command_not_recognized(self):
         return "Command not recognized, please try \"$help\" for available commands".replace("$", self.prefix)
+
+    def command_timed_out(self):
+        return f"Command timed out. (Command time limit is {self.timeout} seconds.)"
