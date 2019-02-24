@@ -69,6 +69,16 @@ def on_message(room, event):
     else:
         print(event['type'])
 
+    try:
+        # check if room is geeks and redact
+        if event['room_id'] == "!pYoawuzxaFxYhOVtjN:cclub.cs.wmich.edu" and event['content']['msgtype'] == "m.image":
+            room.send_text(event['sender'] + " please post images in #img:cclub.cs.wmich.edu and link them here")
+            room.redact_message(event['event_id'], reason="Please post images in #img and link them here")
+    except KeyError:
+        # expecting matrix lib sync to be checking the key when it no longer exists
+        pass
+
+
 def main():
     print("Connecting to server: {}".format(botconfig.client_url))
     client = MatrixClient(botconfig.client_url)
