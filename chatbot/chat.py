@@ -51,8 +51,8 @@ def on_message(room, event):
         if event['content']['msgtype'] == "m.text":
             print("{0}: {1}".format(event['sender'], event['content']['body']))
 
-            # ignore anything the bot might send to itself
-            if(event['sender'] == "@ccawmu:cclub.cs.wmich.edu"):
+            # ignore anyone in the ignore list
+            if(event['sender'] in ignore):
                 return
 
             # create responses for messages starting with the command prefix
