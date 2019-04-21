@@ -7,6 +7,11 @@ command_timeout = 3
 
 command_prefix = "$"
 
+ignored = [
+    "@rustix:cclub.cs.wmich.edu",
+    "@ccawmu:cclub.cs.wmich.edu"
+]
+
 rooms = [
     "#bottest:cclub.cs.wmich.edu",
     "#ccawmunity:cclub.cs.wmich.edu"
