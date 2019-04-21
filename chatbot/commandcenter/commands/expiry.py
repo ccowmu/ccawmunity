@@ -7,13 +7,19 @@ import string
 from datetime import date
 from os import environ
 
+# Expiry command requires several environment variables to be available to the bot process:
+# LDAP_URL 
+# LDAP_MEMBER_BASE
+# LDAP_READONLY_DN
+# LDAP_READONLY_PASSWORD
+# See hellbacon with any questions
 
 class ExpiryCommand(Command):
     def __init__(self):
         self.name = "$expiry"
         self.help = "$expiry | Gets a member's expiration date from their UID. | Usage: $expiry dolphin"
-        self.author = "nothingbutflowers"
-        self.last_updated = "Sept. 29, 2018"
+        self.author = "hellbacon"
+        self.last_updated = "April 21st, 2019"
 
     def run(self, event_pack: EventPackage):
         if len(event_pack.body) < 2:
@@ -30,6 +36,7 @@ class ExpiryCommand(Command):
         MEMBER_BASE = environ.get("LDAP_MEMBER_BASE")
         POSIX_DAY = 86400
         DESIRED_FIELDS = ["shadowExpire"]
+
         tls_config = ldap3.Tls(validate=ssl.CERT_REQUIRED)
         server = ldap3.Server(LDAP_URL, use_ssl=True, tls=tls_config)
         conn = ldap3.Connection(server, user=environ.get("LDAP_READONLY_DN"),
@@ -48,6 +55,6 @@ class ExpiryCommand(Command):
             return str(date.fromtimestamp(unix_timestamp).strftime('%Y-%m-%d'))
         except Exception as e:
             print("something went wrong:", e)
-            return "this error message is incredibly helpful!"
+            return "this error message is incredibly helpful, right dolphin???"
         finally:
             conn.unbind()
