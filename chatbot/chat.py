@@ -52,7 +52,7 @@ def on_message(room, event):
             print("{0}: {1}".format(event['sender'], event['content']['body']))
 
             # ignore anyone in the ignore list
-            if(event['sender'] in ignored):
+            if(event['sender'] in botconfig.ignored):
                 return
 
             # create responses for messages starting with the command prefix
