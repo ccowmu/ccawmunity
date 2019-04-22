@@ -8,6 +8,7 @@ from commandcenter.commander import Commander
 from commandcenter.eventpackage import EventPackage
 
 import botconfig
+import atexit
 
 print("Loading commander...")
 g_commander = Commander()
@@ -17,7 +18,7 @@ def test_message(message, room_id):
 
     sender = '@testcommand-py:cclub.cs.wmich.edu'
     body = message.split(" ")
-    
+
     event_package = EventPackage(body=body, room_id=room_id, sender=sender, event={})
 
     command_string = body[0]
@@ -25,7 +26,12 @@ def test_message(message, room_id):
     if body[0][0] == botconfig.command_prefix:
         print("Bot output: " + g_commander.run_command(command_string, event_package))
 
+def cleanup():
+    print("Cleaning up...")
+
 if __name__ == '__main__':
+    atexit.register(cleanup)
+
     room_id = ""
     if len(sys.argv) >= 2:
         room_id = sys.argv[1]
@@ -36,11 +42,17 @@ if __name__ == '__main__':
 
     print("Enter chat commands via stdin:")
 
-    message = input()
-    while True:
-        test_message(message, room_id)
+    try:
+        last = ''
+        while True:
+            message = input()
 
-        # repeat last command on no input
-        new_mesage = input()
-        if new_mesage != '':
-            message = new_mesage
+            if message != '':
+                test_message(message, room_id)
+                last = message
+            else:
+                if last != '':
+                    test_message(last, room_id)
+    except EOFError:
+        sys.exit()
+
