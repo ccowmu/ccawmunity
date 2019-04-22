@@ -27,7 +27,7 @@ def test_message(message, room_id):
         print("Bot output: " + g_commander.run_command(command_string, event_package))
 
 def cleanup():
-    print("Cleaning up...")
+    print("Shutting down.")
 
 if __name__ == '__main__':
     atexit.register(cleanup)
@@ -53,6 +53,6 @@ if __name__ == '__main__':
             else:
                 if last != '':
                     test_message(last, room_id)
-    except EOFError:
+    except (EOFError, KeyboardInterrupt):
         sys.exit()
 
