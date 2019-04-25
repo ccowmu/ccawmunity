@@ -1,7 +1,8 @@
 from ..command import Command
+from ..command import KVStore
 from ..eventpackage import EventPackage
 
-class KVTestCommand(Command):
+class KVTestCommand(Command, KVStore):
     def __init__(self):
         self.name = "$kv"
         self.help = "$kv | do key-value stuff | Usage: $db get/set key [value]"

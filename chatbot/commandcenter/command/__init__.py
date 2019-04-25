@@ -1,3 +1,4 @@
-__all__ = ['command']
+__all__ = ['command', 'KVStore']
 
 from .command import Command
+from .kvstore import KVStore
