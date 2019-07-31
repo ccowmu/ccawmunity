@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sudo docker run --env-file .env ccaw 
+sudo docker-compose up
