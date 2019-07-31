@@ -10,5 +10,5 @@ class OfficeCommand(Command):
         self.last_updated = "April 20th 2019"
 
     def run(self, event_pack: EventPackage):
-        return requests.get("141.218.118.171:5001/plain")
-
+        resp = requests.get("http://141.218.118.171:5001/json")
+        return resp.text
