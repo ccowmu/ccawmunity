@@ -1,5 +1,9 @@
 FROM python:alpine3.8
 
-ADD chatbot/ .
+WORKDIR /ccaw
 
-CMD ["python", "chatbot/chat.py"]
+ADD chatbot/ /ccaw
+
+RUN pip install -r requirements.txt
+
+CMD ["python", "chat.py"]
