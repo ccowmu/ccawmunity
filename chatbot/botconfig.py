@@ -14,7 +14,9 @@ ignored = [
 
 rooms = [
     "#bottest:cclub.cs.wmich.edu",
-    "#ccawmunity:cclub.cs.wmich.edu"
+    "#ccawmunity:cclub.cs.wmich.edu",
+    "#geeks:cclub.cs.wmich.edu",
+    "#random2:cclub.cs.wmich.edu"
 ]
 
 # listener port
