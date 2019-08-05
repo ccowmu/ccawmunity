@@ -78,16 +78,33 @@ def on_message(room, event):
         # expecting matrix lib sync to be checking the key when it no longer exists
         pass
 
+# called when an invite is received.
+def on_invite(room_id, state):
+    global g_client
+
+    # dump info
+    print("Invite received: {}".format(room_id))
+    print("Invite state:")
+    print(state)
+
+    # join room
+    room = g_client.join_room(room_id)
+    room.add_listener(on_message)
+    print("Joined room: {}".format(room))
+
+    # notice
+    room.send_text("(Note: after a bot restart, you will have to re-invite the bot to this room.)")
 
 def main():
+    global g_client
     print("Connecting to server: {}".format(botconfig.client_url))
-    client = MatrixClient(botconfig.client_url)
+    g_client = MatrixClient(botconfig.client_url)
 
     password = get_password()
 
     try:
         print("Logging in with username: {}".format(botconfig.username))
-        client.login_with_password(botconfig.username, password)
+        g_client.login_with_password(botconfig.username, password)
     except MatrixRequestError as e:
         print(e)
         if e.code == 403:
@@ -106,7 +123,7 @@ def main():
 
     for room_address in botconfig.rooms:
         try:
-            room = client.join_room(room_address)
+            room = g_client.join_room(room_address)
             room.add_listener(on_message)
             rooms[room_address] = room
             print("Joined room: {}".format(room_address))
@@ -119,7 +136,9 @@ def main():
                 print("Couldn't find room: {}".format(room_address))
                 sys.exit(12)
 
-    client.start_listener_thread()
+    g_client.add_invite_listener(on_invite)
+
+    g_client.start_listener_thread()
 
     listener = ListenerManager(rooms, botconfig.listener_port)
 
@@ -132,7 +151,5 @@ def main():
         print("Shutting down.")
 
 if __name__ == '__main__':
-
     logging.basicConfig(level=logging.WARNING)
-     
     main()
