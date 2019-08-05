@@ -40,6 +40,22 @@ def get_password():
         print("No BOT_PASSWORD environment variable has been set.")
     return getpass.getpass(prompt='Password required for {}: '.format(botconfig.username))
 
+# triggered when someone joins geeks.
+# member comes from event["sender"]
+def send_geeks_welcome_message(member):
+    global g_client
+
+    # create a private room and invite
+    room = g_client.create_room(invitees=[member])
+    room.add_listener(on_message)
+    print("Joined room: {}".format(room))
+
+    member_name = member.split(":")[0][1:] # gets username without :cclub.cs.wmich.edu
+
+    # send info
+    with open("./static/welcome-message.txt", "r") as f:
+        room.send_text(f.read().format(member_name))
+
 # called when a message is recieved.
 def on_message(room, event):
     global g_commander
@@ -47,6 +63,10 @@ def on_message(room, event):
     if event['type'] == "m.room.member":
         if event['membership'] == "join":
             print("{0} joined".format(event['content']['displayname']))
+
+            if event['room_id'] == botconfig.ROOM_ID_GEEKS:
+                send_geeks_welcome_message(event["sender"])
+
     elif event['type'] == "m.room.message":
         if event['content']['msgtype'] == "m.text":
             print("{0}: {1}".format(event['sender'], event['content']['body']))
@@ -71,7 +91,7 @@ def on_message(room, event):
 
     try:
         # check if room is geeks and redact
-        if event['room_id'] == "!pYoawuzxaFxYhOVtjN:cclub.cs.wmich.edu" and (event['content']['msgtype'] == "m.image" or event['content']['msgtype'] == "m.video"):
+        if event['room_id'] == botconfig.ROOM_ID_GEEKS and (event['content']['msgtype'] == "m.image" or event['content']['msgtype'] == "m.video"):
             room.send_text(event['sender'] + " please post images in #img:cclub.cs.wmich.edu and link them here")
             room.redact_message(event['event_id'], reason="Please post images in #img and link them here")
     except KeyError:

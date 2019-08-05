@@ -19,5 +19,8 @@ rooms = [
     "#random2:cclub.cs.wmich.edu"
 ]
 
+ROOM_ID_GEEKS = "!pYoawuzxaFxYhOVtjN:cclub.cs.wmich.edu"
+ROOM_ID_BOTTOY = "!xrWBUUXQVKbWIuvMDi:cclub.cs.wmich.edu"
+
 # listener port
 listener_port = 9999

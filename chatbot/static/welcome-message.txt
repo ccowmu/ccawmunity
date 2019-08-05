@@ -1,0 +1,25 @@
+Hi, {}!
+
+Welcome to Computer Club at WMU! We're glad to have you.
+I'm the club's bot. I'm written in Python 3 and you can read my source code here: https://github.com/ccowmu/ccawmunity
+
+Here's a rundown of our main rooms:
+#geeks:cclub.cs.wmich.edu - Our main general chat room. No direct image posting, please.
+#img:cclub.cs.wmich.edu - Post images here and then post the link in #geeks.
+#officers:cclub.cs.wmich.edu - Place to discuss official club business. Despite the name, anyone is welcome.
+#jobs:cclub.cs.wmich.edu - Job listings!
+#help:cclub.cs.wmich.edu - Ask for help with schoolwork here!
+#projects:cclub.cs.wmich.edu - Show off your personal (non-school) projects here!
+#announcements:cclub.cs.wmich.edu - Some club announcements go here. e.g. "spacedog and backbutton are going to get some food tonight, feel free to show up!"
+#hack:cclub.cs.wmich.edu - Talk about cybersecurity here.
+#music:cclub.cs.wmich.edu - Talk about music.
+#bottoy:cclub.cs.wmich.edu - Mess with bots here.
+#random:cclub.cs.wmich.edu - No laws. Meme wasteland. Enter at your own risk.
+
+There are plenty of other rooms for more niche subjects, feel free to explore the public listing.
+
+Type "$help" to see all of my available commands.
+
+If you have any further questions, feel free to reach out to one of the officers!
+
+Now go say hi in #geeks:cclub.cs.wmich.edu!
