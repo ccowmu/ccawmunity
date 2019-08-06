@@ -64,8 +64,8 @@ def on_message(room, event):
         if event['membership'] == "join":
             print("{0} joined".format(event['content']['displayname']))
 
-            if event['room_id'] == botconfig.ROOM_ID_GEEKS:
-                send_geeks_welcome_message(event["sender"])
+            # if event['room_id'] == botconfig.ROOM_ID_GEEKS:
+            #     send_geeks_welcome_message(event["sender"])
 
     elif event['type'] == "m.room.message":
         if event['content']['msgtype'] == "m.text":
