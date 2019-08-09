@@ -8,7 +8,7 @@ import requests
 class OfficeCommand(Command):
     def __init__(self):
         self.name = "$office"
-        self.help = "$office | Lists people connected to CClub network | Usage: $office, register: $office -r <mac>, deregister: $office -d <mac>"
+        self.help = "$office | Lists registered and unregistered devices on the CClub room network | Usage: $office"
         self.author = "hellbacon and spacedog"
         self.last_updated = "August 7th 2019"
 
@@ -32,11 +32,20 @@ class OfficeCommand(Command):
                 mac = event_pack.body[2]
                 text = requests.post("http://141.218.118.171:5001/dereg", data={"nick": nick, "mac": mac}).text
                 if text == "success":
-                    r = "Successfully deregistered!"
+                    r = "Successfully registered!"
                 else:
                     r = "Something went wrong!"
+        elif len(event_pack.body) == 2:
+            if event_pack.body[1] == "-l":
+                # list users mac
+                nick = event_pack.sender.split(":")[0][1:] # gets username without :cclub.cs.wmich.edu
+                text = requests.post("http://141.218.118.171:5001/list", data={"nick": nick}).text
+                if text == "failure":
+                    r = "There are no mac addresses registed for the username: " + nick
+                else:
+                    r = text
         else:
             # just a query
             r = requests.get("http://141.218.118.171:5001/plain").text
-            
+
         return r
