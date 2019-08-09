@@ -23,7 +23,7 @@ class OfficeCommand(Command):
                 mac = event_pack.body[2]
                 text = requests.post("http://141.218.118.171:5001/reg", data={"nick": nick, "mac": mac}).text
                 if text == "success":
-                    r = "Successfully deregistered!"
+                    r = "Successfully registered!"
                 else:
                     r = "Something went wrong!"
             elif event_pack.body[1] == "-d":
@@ -32,7 +32,7 @@ class OfficeCommand(Command):
                 mac = event_pack.body[2]
                 text = requests.post("http://141.218.118.171:5001/dereg", data={"nick": nick, "mac": mac}).text
                 if text == "success":
-                    r = "Successfully registered!"
+                    r = "Successfully deregistered!"
                 else:
                     r = "Something went wrong!"
         elif len(event_pack.body) == 2:
