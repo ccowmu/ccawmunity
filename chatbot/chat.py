@@ -14,6 +14,7 @@
 import sys
 import logging
 import getpass
+import re
 from os import environ
 
 import botconfig
@@ -40,6 +41,18 @@ def get_password():
         print("No BOT_PASSWORD environment variable has been set.")
     return getpass.getpass(prompt='Password required for {}: '.format(botconfig.username))
 
+# verifies that a message is indeed invoking a command
+def is_command(command_string):
+    if command_string[0:len(botconfig.command_prefix)] != botconfig.command_prefix:
+        # doesn't start with command prefix
+        return False
+    
+    if re.match(r"\$\d+", command_string):
+        # just a dollar amount, not a command
+        return False
+
+    return True
+
 # triggered when someone joins geeks.
 # member comes from event["sender"]
 def send_geeks_welcome_message(member):
@@ -64,6 +77,7 @@ def on_message(room, event):
         if event['membership'] == "join":
             print("{0} joined".format(event['content']['displayname']))
 
+            # temporarily disabled: seems to ping people upon icon change as well as room join...
             # if event['room_id'] == botconfig.ROOM_ID_GEEKS:
             #     send_geeks_welcome_message(event["sender"])
 
@@ -78,7 +92,7 @@ def on_message(room, event):
             # create responses for messages starting with the command prefix
             # compares the first x characters of a message to the command prefix,
             # where x = len(command.prefix)
-            if(event['content']['body'][0:len(botconfig.command_prefix)] == botconfig.command_prefix):
+            if(is_command(event['content']['body'].split(" ")[0])):
                 output = event['content']['body'].split(" ")
                 command_string = output[0]
 
