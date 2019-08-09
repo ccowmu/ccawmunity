@@ -8,7 +8,7 @@ import requests
 class OfficeCommand(Command):
     def __init__(self):
         self.name = "$office"
-        self.help = "$office | Lists registered and unregistered devices on the CClub room network | Usage: $office"
+        self.help = "$office | Lists people connected to CClub network | Usage: $office, register: $office -r <mac>, deregister: $office -d <mac>, list your macs: $office -l"
         self.author = "hellbacon and spacedog"
         self.last_updated = "August 7th 2019"
 
@@ -23,7 +23,7 @@ class OfficeCommand(Command):
                 mac = event_pack.body[2]
                 text = requests.post("http://141.218.118.171:5001/reg", data={"nick": nick, "mac": mac}).text
                 if text == "success":
-                    r = "Successfully registered!"
+                    r = "Successfully deregistered!"
                 else:
                     r = "Something went wrong!"
             elif event_pack.body[1] == "-d":
