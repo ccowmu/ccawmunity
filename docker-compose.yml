@@ -3,5 +3,6 @@ services:
   bot:
     build: .
     env_file: .env
+    restart: always
   redis:
     image: "redis:alpine"
