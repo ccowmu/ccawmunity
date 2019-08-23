@@ -17,4 +17,4 @@ class CountCommand(Command):
 
     def run(self, event_pack: EventPackage):
         count = redis.incr("command:count:i")
-        return "You counted to {}!".format(count)
+        return "We counted to {}!".format(count)
