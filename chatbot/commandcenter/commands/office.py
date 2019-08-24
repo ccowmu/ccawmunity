@@ -47,5 +47,8 @@ class OfficeCommand(Command):
         else:
             # just a query
             r = requests.get("http://141.218.118.171:5001/plain").text
+            if not r.strip(): # empty response, noone is in the office.
+                r = "Noone is at Club... :("
+
 
         return r
