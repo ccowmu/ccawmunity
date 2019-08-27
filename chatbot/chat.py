@@ -77,9 +77,9 @@ def on_message(room, event):
         if event['membership'] == "join":
             print("{0} joined".format(event['content']['displayname']))
 
-            # temporarily disabled: seems to ping people upon icon change as well as room join...
-            # if event['room_id'] == botconfig.ROOM_ID_GEEKS:
-            #     send_geeks_welcome_message(event["sender"])
+            # hack: fresh joins don't have event[unsigned][prev_data]
+            if 'unsigned' in event and 'prev_content' not in event['unsigned'] and event['room_id'] == botconfig.ROOM_ID_GEEKS:
+                send_geeks_welcome_message(event["sender"])
 
     elif event['type'] == "m.room.message":
         if event['content']['msgtype'] == "m.text":
@@ -104,7 +104,7 @@ def on_message(room, event):
         print(event['type'])
 
     try:
-        # check if room is geeks and redact
+        # check if room is geeks and redact images/videos
         if event['room_id'] == botconfig.ROOM_ID_GEEKS and (event['content']['msgtype'] == "m.image" or event['content']['msgtype'] == "m.video"):
             room.send_text(event['sender'] + " please post images in #img:cclub.cs.wmich.edu and link them here")
             room.redact_message(event['event_id'], reason="Please post images in #img and link them here")
