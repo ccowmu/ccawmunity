@@ -16,8 +16,12 @@ class GetQuoteCommand(Command):
         if len(event_pack.body) == 1:
             # just $getquote
             quotelist = self.db_list_get("command:addquote:all_quotes")
-            idx = random.randrange(len(quotelist))
-            r = "(" + str(idx + 1) + "): " + quotelist[idx].decode("utf-8") # comes back as bytes
+
+            if len(quotelist) == 0:
+                r = "There are no quotes :("
+            else:
+                idx = random.randrange(len(quotelist))
+                r = "(" + str(idx + 1) + "): " + quotelist[idx].decode("utf-8") # comes back as bytes
         else:
             parameter = event_pack.body[1]
             # check if it's an integer
