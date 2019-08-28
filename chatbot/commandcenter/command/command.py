@@ -9,6 +9,7 @@ class Command:
         self.help = "...looks like self.help never got defined for " + self.name + "..."
         self.author = "...who knows? (They forgot to set the author value!)"
         self.last_updated = "20XX (No date found)"
+        self.raw_db = False
 
     def __str__(self):
         return self.name
@@ -31,7 +32,10 @@ class Command:
     # ez database api
     def _db_create_namespaced_key(self, key):
         # extracts the command name and returns a namespace to use
-        return "command:" + self.name[1:] + ":" + key
+        if hasattr(self, 'raw_db') and self.raw_db == True:
+            return key
+        else:
+            return "command:" + self.name[1:] + ":" + key
 
     def db_set(self, key, value):
         return redis.set(self._db_create_namespaced_key(key), value)
@@ -48,53 +52,71 @@ class Command:
     def db_incrby(self, key, amount):
         return redis.incrby(self._db_create_namespaced_key(key), amount)
     
-    def db_lpush(self, key, value):
-        return redis.lpush(self._db_create_namespaced_key(key), value)
+    def db_lpush(self, list, value):
+        return redis.lpush(self._db_create_namespaced_key(list), value)
 
-    def db_rpush(self, key, value):
-        return redis.rpush(self._db_create_namespaced_key(key), value)
+    def db_rpush(self, list, value):
+        return redis.rpush(self._db_create_namespaced_key(list), value)
 
     # just aliases for rpush
-    def db_append(self, key, value):
-        return self.db_rpush(key, value)
+    def db_append(self, list, value):
+        return self.db_rpush(list, value)
 
-    def db_push(self, key, value):
-        return self.db_rpush(key, value)
+    def db_push(self, list, value):
+        return self.db_rpush(list, value)
 
-    def db_lpop(self, key):
-        return redis.lpop(self._db_create_namespaced_key(key))
+    def db_lpop(self, list):
+        return redis.lpop(self._db_create_namespaced_key(list))
 
-    def db_rpop(self, key):
-        return redis.rpop(self._db_create_namespaced_key(key))
+    def db_rpop(self, list):
+        return redis.rpop(self._db_create_namespaced_key(list))
 
     # just an alias for rpop
-    def db_pop(self, key):
-        return self.db_rpop(key)
+    def db_pop(self, list):
+        return self.db_rpop(list)
 
-    def db_list_len(self, key):
-        return redis.llen(self._db_create_namespaced_key(key))
+    def db_list_len(self, list):
+        return redis.llen(self._db_create_namespaced_key(list))
 
-    def db_list_range(self, key, start, end):
-        return redis.lrange(self._db_create_namespaced_key(key), start, end)
+    def db_list_idx(self, list, index):
+        return redis.lindex(self._db_create_namespaced_key(list), index)
 
+    def db_list_range(self, list, start, end):
+        return redis.lrange(self._db_create_namespaced_key(list), start, end)
+    
     # shortcut to get whole list
-    def db_get_list(self, key):
+    def db_list_get(self, key):
         return self.db_list_range(key, 0, -1)
     
-    def db_set_add(self, key, value):
-        return redis.sadd(self._db_create_namespaced_key(key), value)
+    def db_set_add(self, set, value):
+        return redis.sadd(self._db_create_namespaced_key(set), value)
 
-    def db_set_remove(self, key):
-        return redis.srem(self._db_create_namespaced_key(key))
+    def db_set_remove(self, set, value):
+        return redis.srem(self._db_create_namespaced_key(set), value)
 
-    def db_set_is_member(self, key, set):
-        return redis.sismember(self._db_create_namespaced_key(set), self._db_create_namespaced_key(key))
+    def db_set_is_member(self, set, key):
+        return redis.sismember(self._db_create_namespaced_key(set), key)
 
-    def db_set_get(self, key):
-        return redis.smembers(self._db_create_namespaced_key(key))
+    def db_set_get(self, set):
+        return redis.smembers(self._db_create_namespaced_key(set))
+
+    def db_set_random_element(self, set):
+        return redis.srandmember(self._db_create_namespaced_key(set))
 
     def db_set_union(self, set_one, set_two):
         return redis.sunion(self._db_create_namespaced_key(set_one), self._db_create_namespaced_key(set_two))
+
+    def db_set_sorted_add(self, set, key, value):
+        return redis.zadd(self._db_create_namespaced_key(set), {key: value})
+
+    def db_set_sorted_remove(self, set, value):
+        return redis.zrem(self._db_create_namespaced_key(set), value)
+
+    def db_set_sorted_range(self, set, start, end):
+        return redis.zrange(self._db_create_namespaced_key(set), start, end)
+
+    def db_set_sorted_get(self, set):
+        return self.db_set_sorted_range(self._db_create_namespaced_key(set), 0, -1)
     
     def db_hash_set(self, object, key, value):
         return redis.hset(self._db_create_namespaced_key(object), key, value)
