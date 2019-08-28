@@ -4,11 +4,14 @@ from ..eventpackage import EventPackage
 class AddQuoteCommand(Command):
     def __init__(self):
         self.name = "$addquote" # this is required in order for the command to run!
-        self.help = "$addquote | usage: $addquote <quote>"
+        self.help = "$addquote | usage: $addquote <username>: <quote>"
         self.author = "spacedog"
         self.last_updated = "August 27, 2018"
 
     def run(self, event_pack: EventPackage):
+        if len(event_pack.body) < 3:
+            return "usage: $addquote <username>: <quote>"
+
         user = event_pack.body[1]
         quote = " ".join(event_pack.body[2:])
 
