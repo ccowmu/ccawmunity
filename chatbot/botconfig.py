@@ -24,3 +24,5 @@ ROOM_ID_BOTTOY = "!xrWBUUXQVKbWIuvMDi:cclub.cs.wmich.edu"
 
 # listener port
 listener_port = 9999
+
+spam_limit = 1000

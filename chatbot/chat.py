@@ -18,6 +18,7 @@ import re
 from os import environ
 
 import botconfig
+import karma
 
 from matrix_client.client import MatrixClient
 from matrix_client.api import MatrixRequestError
@@ -89,6 +90,9 @@ def on_message(room, event):
             if(event['sender'] in botconfig.ignored):
                 return
 
+            # do karma
+            karma.process_message(event['content']['body'])
+
             # create responses for messages starting with the command prefix
             # compares the first x characters of a message to the command prefix,
             # where x = len(command.prefix)
@@ -99,7 +103,16 @@ def on_message(room, event):
                 print("Command detected: {0}".format(command_string))
                 event_package = EventPackage(body=output, room_id=event["room_id"], sender=event["sender"], event=event)
 
-                room.send_text(g_commander.run_command(command_string, event_package))
+                response = g_commander.run_command(command_string, event_package)
+
+                # don't spam #geeks
+                if event['room_id'] == botconfig.ROOM_ID_GEEKS:
+                    if len(response) <= botconfig.spam_limit:
+                        room.send_text(response)
+                    else:
+                        room.send_text("Response too spammy for #geeks!")
+                else:
+                    room.send_text(response)
     else:
         print(event['type'])
 
