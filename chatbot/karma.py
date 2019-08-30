@@ -17,6 +17,7 @@ def process_message(message):
         if key[0] == "(" and key[-1:] == ")":
             key = key[1:-1] # chop off parenthesis
 
+        key = key.lower()
         op = tup[1]
 
         # keep a set of all items
