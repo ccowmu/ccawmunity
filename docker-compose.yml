@@ -3,6 +3,6 @@ services:
   bot:
     build: .
     env_file: .env
-    restart: always
+    restart: on-failure
   redis:
     image: "redis:alpine"
