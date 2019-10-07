@@ -14,26 +14,21 @@ class MCOnlineCommand(Command):
         self.last_updated = "October 4th 2019"
 
     def run(self, event_pack: EventPackage):
-        r = requests.get("https://mcapi.us/server/status?ip=dot.cs.wmich.edu&port=6969")
-        status = json.loads(r)
-        output = status["players"]
-        # fp = open('/opt/app/logs/latest','r')
-        # output = ""
+        r = requests.get("https://api.mcsrvstat.us/2/dot.cs.wmich.edu:6969")
+        status = json.loads(r.content.decode("utf-8"))
+        
+        playerList = ""
+        if status["players"]["online"] > 0:
+            playerList = "Players Online: "
+            plural = False
+            for player in status["players"]["list"]:
+                if plural:
+                    playerList = playerList + ", "
+                playerList = playerList + player
+                plural = True
 
-        # line = fp.readline()
-        # cnt = 1
+        else:
+            playerList = "No one is online :("
+        
 
-        # while line:
-        #     line = line.strip()
-        #     if line.find("logged in"):
-        #         output += line
-
-        #     elif line.find("left the game"):
-        #         output += line
-
-        #     line = fp.readline()
-        #     cnt += 1
-
-        # fp.close()
-
-        return output.content.decode("utf-8")
+        return playerList
