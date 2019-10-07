@@ -36,4 +36,4 @@ class MCOnlineCommand(Command):
 
         # fp.close()
 
-        return output
+        return output.content.decode("utf-8")
