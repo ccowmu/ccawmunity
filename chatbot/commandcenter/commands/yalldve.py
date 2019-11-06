@@ -13,7 +13,7 @@ class YalldveCommand(Command):
     def run(self, event_pack: EventPackage):
         start = ["y","n","ny","wh","s",""]
         middle = ["all","would","could","can","whom","where","don","ain","yal","how"]
-        end = ["n","t","st","ve","l","d","ve"]
+        end = ["n","t","st","ve","l","d"]
 
         slang = random.choice(start)
         if slang != "":
