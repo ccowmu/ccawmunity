@@ -11,22 +11,22 @@ class YalldveCommand(Command):
         self.last_updated = "November 4th 2019"
 
     def run(self, event_pack: EventPackage):
-        start=["y","n","ny","wh","s",""]
-        middle=["all","would","could","can","whom","where","don","ain","yal"]
-        end = ["n","t","st","ve","l","dve"]
+        start = ["y","n","ny","wh","s",""]
+        middle = ["all","would","could","can","whom","where","don","ain","yal","how"]
+        end = ["n","t","st","ve","l","d","ve"]
 
-        slang = start[random.randint(0, len(start)-1)]
+        slang = random.choice(start)
         if slang != "":
             slang += "'"
-        slang += middle[random.randint(0, len(middle)-1)]
+        slang += random.choice(middle)
 
         # guaranteed one ending
         slang += "'"
-        slang += end[random.randint(0, len(end)-1)]
+        slang += random.choice(end)
         
         # potentially infinite more
         while random.randint(1,2) < 2:
             slang += "'"
-            slang += end[random.randint(0, len(end)-1)]
+            slang += random.choice(end)
 
         return slang
