@@ -9,7 +9,8 @@ command_prefix = "$"
 
 ignored = [
     "@rustix:cclub.cs.wmich.edu",
-    "@ccawmu:cclub.cs.wmich.edu"
+    "@ccawmu:cclub.cs.wmich.edu",
+    "@fish:cclub.cs.wmich.edu"
 ]
 
 rooms = [
