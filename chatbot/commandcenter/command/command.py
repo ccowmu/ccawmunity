@@ -46,6 +46,9 @@ class Command:
     def db_get(self, key):
         return redis.get(self._db_create_namespaced_key(key))
 
+    def db_del(self, key):
+        return redis.delete(self._db_create_namespaced_key(key))
+
     def db_incr(self, key):
         return redis.incr(self._db_create_namespaced_key(key))
 
@@ -78,11 +81,20 @@ class Command:
     def db_list_len(self, list):
         return redis.llen(self._db_create_namespaced_key(list))
 
+    def db_list_set(self, list, index, key):
+        return redis.lset(self._db_create_namespaced_key(list), index, key)
+
+    def db_list_rem(self, list, num, key):
+        return redis.lrem(self._db_create_namespaced_key(list), num, key)
+
     def db_list_idx(self, list, index):
         return redis.lindex(self._db_create_namespaced_key(list), index)
 
     def db_list_range(self, list, start, end):
         return redis.lrange(self._db_create_namespaced_key(list), start, end)
+
+    def db_list_trim(self, list, start, end):
+        return redis.ltrim(self._db_create_namespaced_key(list), start, end)
     
     # shortcut to get whole list
     def db_list_get(self, key):

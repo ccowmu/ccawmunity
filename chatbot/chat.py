@@ -81,6 +81,7 @@ def send_geeks_welcome_message(member):
 
 def on_message(room, event):
     global g_commander
+    global g_client
 
     if event['type'] == "m.room.member":
         if event['content']['membership'] == "join":
@@ -114,6 +115,19 @@ def on_message(room, event):
 
                 response = g_commander.run_command(
                     command_string, event_package)
+
+                #hack: need to change topic here for some reason
+                if command_string == "$topic":
+                    if response[0] == "ERR":
+                        print("! [TOPIC] {}".format(response[1]))
+                        return
+                    elif response[0] == "TOP":
+                        g_client.get_rooms()[event["room_id"]].set_room_topic(response[1])
+                        return
+                    elif response[0] == "MSG":
+                        response = response[1]
+                    else:
+                        print("! [TOPIC] SOMETHING CATASTROPHIC OCCURRED!")
 
                 # don't spam #geeks
                 if event['room_id'] == botconfig.ROOM_ID_GEEKS:
