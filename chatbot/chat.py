@@ -36,7 +36,7 @@ g_commander = Commander(botconfig.command_prefix, botconfig.command_timeout)
 
 def get_password():
     # try to find password in the BOT_PASSWORD environment variable
-    if "BOT_PASSWORD" in environ and environ["BOT_PASSWORD"] is not "":
+    if "BOT_PASSWORD" in environ and environ["BOT_PASSWORD"] != "":
         print("Obtained password from BOT_PASSWORD environment variable.")
         return environ["BOT_PASSWORD"]
     else:
