@@ -1,6 +1,5 @@
-import sys
-import importlib
 import multiprocessing
+import re
 
 from os import listdir
 from os.path import isfile, join, abspath, dirname
@@ -28,56 +27,77 @@ class Commander:
         print("Commander loaded with commands:")
         print(self.get_help_all())
 
+    def is_command(self, line):
+        if line[0:len(self.prefix)] != self.prefix:
+            # doesn't start with command prefix
+            return False
+
+        if re.match(r"\$\d+", line):
+            # just a dollar amount, not a command
+            return False
+
+        return True
+
     def run_command(self, command_string, event_pack: EventPackage):
-        # convert command string to use $ as prefix in order to work with the internal syntax
-        command_string_normalized = command_string.replace(self.prefix, "$")
+        if self.is_command(command_string):
+            # convert command string to use $ as prefix in order to work with the internal syntax
+            command_string_normalized = command_string.replace(self.prefix, "$")
 
-        print("Commander: running command: {0}".format(command_string_normalized))
+            # print("Commander: running command: {0}".format(command_string_normalized))
 
-        if command_string_normalized == "$commands":
-            print("Built in command: $commands")
-            return self.get_help_all()
-
-        if command_string_normalized == "$help":
-            print("Built in command: $help")
-            if len(event_pack.body) >= 2:
-                return self.get_help(event_pack.body[1].replace(self.prefix, "$"))
-            else:
+            if command_string_normalized == "$commands":
+                print("Built in command: $commands")
                 return self.get_help_all()
 
-        if command_string_normalized == "$info":
-            print("Built in command: $info")
-            if len(event_pack.body) >= 2:
-                return self.get_info(event_pack.body[1].replace(self.prefix, "$"))
+            if command_string_normalized == "$help":
+                print("Built in command: $help")
+                if len(event_pack.body) >= 2:
+                    return self.get_help(event_pack.body[1].replace(self.prefix, "$"))
+                else:
+                    return self.get_help_all()
+
+            if command_string_normalized == "$info":
+                print("Built in command: $info")
+                if len(event_pack.body) >= 2:
+                    return self.get_info(event_pack.body[1].replace(self.prefix, "$"))
+                else:
+                    return "You must specify a command!"
+
+            if command_string_normalized in self.commands:
+                command = self.commands[command_string_normalized]
+
+                # create a pipe to retrieve the result
+                recv_end, send_end = multiprocessing.Pipe(False)
+
+                # start the command on a new process
+                p = multiprocessing.Process(target=self.start_command_process, args=(command, event_pack, send_end))
+
+                # start the process, timeout after self.timeout seconds
+                p.start()
+                p.join(self.timeout)
+
+                # if the process is still alive after self.timeout seconds, kill it
+                if p.is_alive():
+                    print(f"Commander: killing a command after timeout. ({self.timeout} seconds)")
+                    # NOTE:
+                    # terminating the process corrupts the pipe created above. 
+                    # this is fine as long as we don't use it again.
+                    p.terminate() 
+                    return self.command_timed_out(command.get_name())
+
+                # if the process wasn't terminated, it's return result will be in the pipe.
+                return recv_end.recv()
             else:
-                return "You must specify a command!"
-
-        if command_string_normalized in self.commands:
-            command = self.commands[command_string_normalized]
-
-            # create a pipe to retrieve the result
-            recv_end, send_end = multiprocessing.Pipe(False)
-
-            # start the command on a new process
-            p = multiprocessing.Process(target=self.start_command_process, args=(command, event_pack, send_end))
-
-            # start the process, timeout after self.timeout seconds
-            p.start()
-            p.join(self.timeout)
-
-            # if the process is still alive after self.timeout seconds, kill it
-            if p.is_alive():
-                print(f"Commander: killing a command after timeout. ({self.timeout} seconds)")
-                # NOTE:
-                # terminating the process corrupts the pipe created above. 
-                # this is fine as long as we don't use it again.
-                p.terminate() 
-                return self.command_timed_out(command.get_name())
-
-            # if the process wasn't terminated, it's return result will be in the pipe.
-            return recv_end.recv()
+                return self.command_not_recognized()
         else:
-            return self.command_not_recognized()
+            # not a command, pass on to nosy commands
+            for name, command in self.commands.items():
+                if command.get_nosy():
+                    try:
+                        command.sniff_message(event_pack)
+                    except Exception as e:
+                        print(f"WARNING | {name}'s sniff threw an exception: {e}")
+            return None
 
     def start_command_process(self, command, event_pack, pipe):
         # encapsulated in a new function so that the commands can still use "return" to send their chat strings back.

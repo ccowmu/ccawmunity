@@ -1,5 +1,8 @@
-from ..command import Command
+from ..command import Command, CommandStateResponse
 from ..eventpackage import EventPackage
+
+import asyncio
+from nio.event_builders.state_events import ChangeTopicBuilder
 
 class TopicCommand(Command):
     def __init__(self):
@@ -10,6 +13,23 @@ class TopicCommand(Command):
         self.whitelist = ["alu", "spacedog", "sphinx"]
 
     def run(self, event_pack: EventPackage):
+        response = self._get_response(event_pack)
+
+        if response[0] == "ERR":
+            print("! [TOPIC] {}".format(response[1]))
+            return None
+        elif response[0] == "TOP":
+            print(f"! [TOPIC] got \"{response[1]}\"")
+            e_dict = ChangeTopicBuilder(response[1]).as_dict()
+            return CommandStateResponse(e_dict["type"], e_dict["content"])
+        elif response[0] == "MSG":
+            return response[1]
+        else:
+            print("! [TOPIC] SOMETHING CATASTROPHIC OCCURRED!")
+        
+        return "Error :-("
+
+    def _get_response(self, event_pack: EventPackage):
         args = event_pack.body[1:]
         room = event_pack.room_id.split(":")[0][1:]
         nick = event_pack.sender.split(":")[0][1:]

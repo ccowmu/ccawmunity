@@ -1,4 +1,4 @@
-matrix_client==0.3.2
+matrix-nio
 ldap3
 requests
 redis
