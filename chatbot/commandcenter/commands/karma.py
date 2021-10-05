@@ -3,9 +3,6 @@ import re
 from ..command import Command
 from ..eventpackage import EventPackage
 
-from redis import Redis
-redis = Redis(host="redis", db=0)
-
 # looks for "xyz++"
 regex = re.compile(r"([^\-\$ ]+|(?:\().+?(?:\)))(\+\+|--)")
 
