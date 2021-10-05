@@ -46,7 +46,7 @@ async def room_send_text(room_id, text):
 def time_filter(event):
     # on startup, the bot will receive every historical event ever...
     # make sure we don't run commands from the past! 
-    # We wait to process anything until we see this session's unique uuid    
+    # we wait to process anything until we see this session's unique uuid    
     if not tk.time_has_started() and hasattr(event, "body") and event.body == tk.get_session_startup_string():
         tk.start_time(event.server_timestamp)
         return False
@@ -59,6 +59,7 @@ def time_filter(event):
 
 # -- callbacks -----------------------------------------------------------------
 
+# take a CommandResponse and do the appropriate action (send text, send state, ...)
 async def handle_command_result(room: MatrixRoom, response: command.CommandResponse):
     global g_client
 
@@ -69,14 +70,11 @@ async def handle_command_result(room: MatrixRoom, response: command.CommandRespo
         # send response, but don't spam #geeks
         if room.room_id == botconfig.ROOM_ID_GEEKS:
             if len(response) <= botconfig.spam_limit:
-                if room.room_id == botconfig.ROOM_ID_BOTTOY:
-                    return await room_send_text(room.room_id, response)
-            else:
-                if room.room_id == botconfig.ROOM_ID_BOTTOY:
-                    return await room_send_text(room.room_id, "Too spammy! >:(")
-        else:
-            if room.room_id == botconfig.ROOM_ID_BOTTOY:
                 return await room_send_text(room.room_id, response)
+            else:
+                return await room_send_text(room.room_id, "Too spammy! >:(")
+        else:
+            return await room_send_text(room.room_id, response)
 
     if isinstance(response, command.CommandStateResponse):
         print(f"-> {response}")
@@ -86,6 +84,7 @@ async def handle_command_result(room: MatrixRoom, response: command.CommandRespo
             content = response.content
         )
 
+# called when a text message is sent in a room
 async def on_message(room: MatrixRoom, event: RoomMessageText):
     global g_commander
     global g_client
@@ -107,44 +106,50 @@ async def on_message(room: MatrixRoom, event: RoomMessageText):
         body=argv, room_id=room.room_id, sender=event.sender, event=event)
 
     # just for fun... send a typing notification
-    if (g_commander.is_command(command_string)):
+    if g_commander.is_command(command_string):
         await g_client.room_typing(
             room.room_id, True, timeout=(botconfig.command_timeout * 1000)
         )
 
+    # run command
     result = g_commander.run_command(command_string, event_package)
 
+    # done typing
+    if g_commander.is_command(command_string):
+        await g_client.room_typing(room.room_id, False)
+
+    # handle command result
     if result is not None:
         # backwards compatibility: most commands will return raw strings
         if isinstance(result, str):
             result = command.CommandTextResponse(result)
 
-        # done typing
-        await g_client.room_typing(room.room_id, False)
-
         await handle_command_result(room, result)
 
-
+# delete 'event' from the passed room
 async def redact_media(room: MatrixRoom, event):
     await room_send_text(room.room_id, f"{event.sender} please post images in #img:cclub.cs.wmich.edu and link them here.")
     await g_client.room_redact(room.room_id, event.event_id, reason="Please post images in #img and linke them here")
 
+# called when an image is sent in a room
 async def on_image(room: MatrixRoom, event: RoomMessageImage):
     if not time_filter(event):
         return
 
-    if room.room_id == botconfig.ROOM_ID_BOTTOY: #todo geeks
+    if room.room_id == botconfig.ROOM_ID_GEEKS:
         print(f"INFO | removing image in {room.machine_name}")
         await redact_media(room, event)
 
+# called when a video is sent in a room
 async def on_video(room: MatrixRoom, event: RoomMessageVideo):
     if not time_filter(event):
         return
 
-    if room.room_id == botconfig.ROOM_ID_BOTTOY: #todo geeks
+    if room.room_id == botconfig.ROOM_ID_GEEKS:
         print(f"INFO | removing video in {room.machine_name}")
         await redact_media(room, event)
 
+# create a DM with the person in 'event' and send a welcome message
 async def send_geeks_welcome_message(room: MatrixRoom, event: RoomMemberEvent):
     global g_client
 
@@ -160,12 +165,13 @@ async def send_geeks_welcome_message(room: MatrixRoom, event: RoomMemberEvent):
     with open("./static/welcome-message.txt", "r") as f:
         return await room_send_text(new_room.room_id, f.read().format(member_name))
 
+# called when someone's membership in a room changes
 async def on_membership(room: MatrixRoom, event: RoomMemberEvent):
     if not time_filter(event):
         return
 
     # PM newbies
-    if event.membership == "join" and room.room_id == botconfig.ROOM_ID_BOTTOY: #TODO geeks
+    if event.membership == "join" and room.room_id == botconfig.ROOM_ID_GEEKS:
         return await send_geeks_welcome_message(room, event)
 
     return
