@@ -3,6 +3,33 @@ from ..eventpackage import EventPackage
 from redis import Redis
 redis = Redis(host="redis", db=0)
 
+# responses that a command can send back up.
+class CommandResponse:
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return "Command Response Base?"
+
+# text responses get sent as text
+class CommandTextResponse(CommandResponse):
+    def __init__(self, text: str):
+        super().__init__()
+        self.text = text
+
+    def __str__(self):
+        return self.text
+
+# state responses get sent as state changes (e.g. topic changes)
+class CommandStateResponse(CommandResponse):
+    def __init__(self, event_type: str, content: dict):
+        super().__init__()
+        self.type = event_type
+        self.content = content
+
+    def __str__(self):
+        return f"{self.type}: {self.content}"
+
 class Command:
     def __init__(self):
         self.name = "$default_command_object"
@@ -10,12 +37,18 @@ class Command:
         self.author = "...who knows? (They forgot to set the author value!)"
         self.last_updated = "20XX (No date found)"
         self.raw_db = False
+        
+        # if true, self.sniff_message() will be invoked for EVERY message.
+        self.is_nosy = False
 
     def __str__(self):
         return self.name
 
     def run(self, eventpackage: EventPackage):
         return "This command doesn't have an implementation yet!"
+
+    def sniff_message(self, eventpackage: EventPackage):
+        pass
 
     def get_name(self):
         return str(self.name)
@@ -28,6 +61,11 @@ class Command:
 
     def get_last_updated(self):
         return str(self.last_updated)
+
+    def get_nosy(self):
+        if hasattr(self, "is_nosy"):
+            return self.is_nosy
+        return False
 
     # ez database api
     def _db_create_namespaced_key(self, key):

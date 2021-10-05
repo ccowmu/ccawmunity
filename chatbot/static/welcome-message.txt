@@ -10,11 +10,10 @@ Here's a rundown of our main rooms:
 #jobs:cclub.cs.wmich.edu - Job listings!
 #help:cclub.cs.wmich.edu - Ask for help with schoolwork here!
 #projects:cclub.cs.wmich.edu - Show off your personal (non-school) projects here!
-#announcements:cclub.cs.wmich.edu - Some club announcements go here. e.g. "spacedog and backbutton are going to get some food tonight, feel free to show up!"
-#hack:cclub.cs.wmich.edu - Talk about cybersecurity here.
+#hackin:cclub.cs.wmich.edu - Talk about cybersecurity here.
 #music:cclub.cs.wmich.edu - Talk about music.
 #bottoy:cclub.cs.wmich.edu - Mess with bots here.
-#random2:cclub.cs.wmich.edu - Memes.
+#random+:cclub.cs.wmich.edu - Memes.
 
 There are plenty of other rooms for more niche subjects, feel free to explore the public listing.
 

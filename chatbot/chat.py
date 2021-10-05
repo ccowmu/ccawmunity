@@ -1,38 +1,22 @@
 #!/usr/bin/env python3
 
-# A simple chat client for matrix.
-# This sample will allow you to connect to a room, and send/recieve messages.
-# Args: host:port username password room
-# Error Codes:
-# 1 - Unknown problem has occured
-# 2 - Could not find the server.
-# 3 - Bad URL Format.
-# 4 - Bad username/password.
-# 11 - Wrong room format.
-# 12 - Couldn't find room.
-
-import sys
-import logging
+import asyncio
 import getpass
-import re
 from os import environ
 
 import botconfig
-import karma
 
-from matrix_client.client import MatrixClient
-from matrix_client.api import MatrixRequestError
-from requests.exceptions import MissingSchema
-
-from functools import partial
+from nio import AsyncClient, MatrixRoom
+from nio import RoomMessageText, RoomMessageImage, RoomMessageVideo, RoomMemberEvent
 
 from commandcenter.commander import Commander
 from commandcenter.eventpackage import EventPackage
 
-from listenercenter.listenermanager import ListenerManager
+from commandcenter import command
+
+import timekeeping as tk
 
 g_commander = Commander(botconfig.command_prefix, botconfig.command_timeout)
-
 
 def get_password():
     # try to find password in the BOT_PASSWORD environment variable
@@ -43,191 +27,176 @@ def get_password():
         print("No BOT_PASSWORD environment variable has been set.")
     return getpass.getpass(prompt='Password required for {}: '.format(botconfig.username))
 
-# verifies that a message is indeed invoking a command
-
-
-def is_command(command_string):
-    if command_string[0:len(botconfig.command_prefix)] != botconfig.command_prefix:
-        # doesn't start with command prefix
-        return False
-
-    if re.match(r"\$\d+", command_string):
-        # just a dollar amount, not a command
-        return False
-
-    return True
-
-# triggered when someone joins geeks.
-# member comes from event["sender"]
-
-
-def send_geeks_welcome_message(member):
+async def room_send_text(room_id, text):
     global g_client
 
+    if g_client is None:
+        print("ERROR | Tried to send room text with a null client")
+        return
+
+    return await g_client.room_send(
+        room_id = room_id,
+        message_type="m.room.message",
+        content = {
+            "msgtype": "m.text",
+            "body": str(text)
+        }
+    )
+
+def time_filter(event):
+    # on startup, the bot will receive every historical event ever...
+    # make sure we don't run commands from the past! 
+    # we wait to process anything until we see this session's unique uuid    
+    if not tk.time_has_started() and hasattr(event, "body") and event.body == tk.get_session_startup_string():
+        tk.start_time(event.server_timestamp)
+        return False
+
+    if not tk.time_has_started():
+        return False
+
+    # Only process events that happened after the beginning of time
+    return event.server_timestamp >= tk.get_beginning_of_time()
+
+# -- callbacks -----------------------------------------------------------------
+
+# take a CommandResponse and do the appropriate action (send text, send state, ...)
+async def handle_command_result(room: MatrixRoom, response: command.CommandResponse):
+    global g_client
+
+    if isinstance(response, command.CommandTextResponse):
+        log_response = response.text.replace("\n", "\\n")
+        print(f"-> {log_response}")
+
+        # send response, but don't spam #geeks
+        if room.room_id == botconfig.ROOM_ID_GEEKS:
+            if len(response) <= botconfig.spam_limit:
+                return await room_send_text(room.room_id, response)
+            else:
+                return await room_send_text(room.room_id, "Too spammy! >:(")
+        else:
+            return await room_send_text(room.room_id, response)
+
+    if isinstance(response, command.CommandStateResponse):
+        print(f"-> {response}")
+        return await g_client.room_put_state(
+            room_id = room.room_id,
+            event_type = response.type,
+            content = response.content
+        )
+
+# called when a text message is sent in a room
+async def on_message(room: MatrixRoom, event: RoomMessageText):
+    global g_commander
+    global g_client
+
+    if not time_filter(event):
+        return
+
+    print(f"{room.user_name(event.sender)[:16]}: {event.body}")
+
+    # ignore senders in ignore list
+    if event.sender in botconfig.ignored:
+        print("INFO | (ignored)")
+        return
+
+    # construct data for command machinery
+    argv = event.body.split(" ")
+    command_string = argv[0]
+    event_package = EventPackage(
+        body=argv, room_id=room.room_id, sender=event.sender, event=event)
+
+    # just for fun... send a typing notification
+    if g_commander.is_command(command_string):
+        await g_client.room_typing(
+            room.room_id, True, timeout=(botconfig.command_timeout * 1000)
+        )
+
+    # run command
+    result = g_commander.run_command(command_string, event_package)
+
+    # done typing
+    if g_commander.is_command(command_string):
+        await g_client.room_typing(room.room_id, False)
+
+    # handle command result
+    if result is not None:
+        # backwards compatibility: most commands will return raw strings
+        if isinstance(result, str):
+            result = command.CommandTextResponse(result)
+
+        await handle_command_result(room, result)
+
+# delete 'event' from the passed room
+async def redact_media(room: MatrixRoom, event):
+    await room_send_text(room.room_id, f"{event.sender} please post images in #img:cclub.cs.wmich.edu and link them here.")
+    await g_client.room_redact(room.room_id, event.event_id, reason="Please post images in #img and linke them here")
+
+# called when an image is sent in a room
+async def on_image(room: MatrixRoom, event: RoomMessageImage):
+    if not time_filter(event):
+        return
+
+    if room.room_id == botconfig.ROOM_ID_GEEKS:
+        print(f"INFO | removing image in {room.machine_name}")
+        await redact_media(room, event)
+
+# called when a video is sent in a room
+async def on_video(room: MatrixRoom, event: RoomMessageVideo):
+    if not time_filter(event):
+        return
+
+    if room.room_id == botconfig.ROOM_ID_GEEKS:
+        print(f"INFO | removing video in {room.machine_name}")
+        await redact_media(room, event)
+
+# create a DM with the person in 'event' and send a welcome message
+async def send_geeks_welcome_message(room: MatrixRoom, event: RoomMemberEvent):
+    global g_client
+
+    member = event.sender
+
     # create a private room and invite
-    room = g_client.create_room(invitees=[member])
-    room.add_listener(on_message)
-    print("Joined room: {}".format(room))
+    new_room = await g_client.room_create(name="Welcome to CClub!", is_direct=True, invite=[member])
 
     # gets username without :cclub.cs.wmich.edu
     member_name = member.split(":")[0][1:]
 
     # send info
     with open("./static/welcome-message.txt", "r") as f:
-        room.send_text(f.read().format(member_name))
+        return await room_send_text(new_room.room_id, f.read().format(member_name))
 
-# called when a message is recieved.
+# called when someone's membership in a room changes
+async def on_membership(room: MatrixRoom, event: RoomMemberEvent):
+    if not time_filter(event):
+        return
 
+    # PM newbies
+    if event.membership == "join" and room.room_id == botconfig.ROOM_ID_GEEKS:
+        return await send_geeks_welcome_message(room, event)
 
-def on_message(room, event):
-    global g_commander
+    return
+
+async def main():
     global g_client
 
-    if event['type'] == "m.room.member":
-        if event['content']['membership'] == "join":
-            print("{0} joined".format(event['content']['displayname']))
-
-            # hack: fresh joins don't have event[unsigned][prev_content]
-            if 'unsigned' in event and 'prev_content' not in event['unsigned'] and event['room_id'] == botconfig.ROOM_ID_GEEKS:
-                send_geeks_welcome_message(event["sender"])
-
-    elif event['type'] == "m.room.message":
-        if event['content']['msgtype'] == "m.text":
-            print("{0}: {1}".format(event['sender'], event['content']['body']))
-
-            # ignore anyone in the ignore list
-            if(event['sender'] in botconfig.ignored):
-                return
-
-            # do karma
-            karma.process_message(event['content']['body'])
-
-            # create responses for messages starting with the command prefix
-            # compares the first x characters of a message to the command prefix,
-            # where x = len(command.prefix)
-            if(is_command(event['content']['body'].split(" ")[0])):
-                output = event['content']['body'].split(" ")
-                command_string = output[0]
-
-                print("Command detected: {0}".format(command_string))
-                event_package = EventPackage(
-                    body=output, room_id=event["room_id"], sender=event["sender"], event=event)
-
-                response = g_commander.run_command(
-                    command_string, event_package)
-
-                #hack: need to change topic here for some reason
-                if command_string == "$topic":
-                    if response[0] == "ERR":
-                        print("! [TOPIC] {}".format(response[1]))
-                        return
-                    elif response[0] == "TOP":
-                        g_client.get_rooms()[event["room_id"]].set_room_topic(response[1])
-                        return
-                    elif response[0] == "MSG":
-                        response = response[1]
-                    else:
-                        print("! [TOPIC] SOMETHING CATASTROPHIC OCCURRED!")
-
-                # don't spam #geeks
-                if event['room_id'] == botconfig.ROOM_ID_GEEKS:
-                    if len(response) <= botconfig.spam_limit:
-                        room.send_text(response)
-                    else:
-                        room.send_text("Response too spammy for #geeks!")
-                else:
-                    room.send_text(response)
-    else:
-        print(event['type'])
-
-    try:
-        # check if room is geeks and redact images/videos
-        if event['room_id'] == botconfig.ROOM_ID_GEEKS and (event['content']['msgtype'] == "m.image" or event['content']['msgtype'] == "m.video"):
-            room.send_text(
-                event['sender'] + " please post images in #img:cclub.cs.wmich.edu and link them here")
-            room.redact_message(
-                event['event_id'], reason="Please post images in #img and link them here")
-    except KeyError:
-        # expecting matrix lib sync to be checking the key when it no longer exists
-        pass
-
-# called when an invite is received.
-
-
-def on_invite(room_id, state):
-    global g_client
-
-    # dump info
-    print("Invite received: {}".format(room_id))
-    print("Invite state:")
-    print(state)
-
-    # join room
-    room = g_client.join_room(room_id)
-    room.add_listener(on_message)
-    print("Joined room: {}".format(room))
-
-    # notice
-    room.send_text(
-        "(Note: after a bot restart, you will have to re-invite the bot to this room.)")
-
-
-def main():
-    global g_client
     print("Connecting to server: {}".format(botconfig.client_url))
-    g_client = MatrixClient(botconfig.client_url)
+    g_client = AsyncClient(botconfig.client_url, f"@{botconfig.username}:cclub.cs.wmich.edu")
 
+    # log in
     password = get_password()
+    print(await g_client.login(password))
 
-    try:
-        print("Logging in with username: {}".format(botconfig.username))
-        g_client.login_with_password(botconfig.username, password)
-    except MatrixRequestError as e:
-        print(e)
-        if e.code == 403:
-            print("Bad username or password.")
-            sys.exit(4)
-        else:
-            print("Check your sever details are correct.")
-            sys.exit(2)
-    except MissingSchema as e:
-        print("Bad URL format.")
-        print(e)
-        sys.exit(3)
+    # figure out what time it is
+    await room_send_text(botconfig.ROOM_ID_BOTTOY, tk.get_session_startup_string())
 
-    # room dictionary that will be passed to the listener manager
-    rooms = {}
+    # register event callbacks
+    g_client.add_event_callback(on_message, RoomMessageText)
+    g_client.add_event_callback(on_image, RoomMessageImage)
+    g_client.add_event_callback(on_video, RoomMessageVideo)
+    g_client.add_event_callback(on_membership, RoomMemberEvent)
 
-    for room_address in botconfig.rooms:
-        try:
-            room = g_client.join_room(room_address)
-            room.add_listener(on_message)
-            rooms[room_address] = room
-            print("Joined room: {}".format(room_address))
-        except MatrixRequestError as e:
-            print(e)
-            if e.code == 400:
-                print("{}: Room ID/Alias in the wrong format".format(room_address))
-                sys.exit(11)
-            else:
-                print("Couldn't find room: {}".format(room_address))
-                sys.exit(12)
-
-    g_client.add_invite_listener(on_invite)
-
-    g_client.start_listener_thread()
-
-    listener = ListenerManager(rooms, botconfig.listener_port)
-
-    listener.start_listener_thread()
-
-    try:
-        while True:
-            pass
-    except KeyboardInterrupt:
-        print("Shutting down.")
-
+    # loop forever
+    await g_client.sync_forever(timeout=120000) # two minutes
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.WARNING)
-    main()
+    asyncio.get_event_loop().run_until_complete(main())
