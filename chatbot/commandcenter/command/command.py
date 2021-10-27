@@ -20,6 +20,9 @@ class CommandTextResponse(CommandResponse):
     def __str__(self):
         return self.text
 
+    def __len__(self):
+        return len(self.text)
+
 # state responses get sent as state changes (e.g. topic changes)
 class CommandStateResponse(CommandResponse):
     def __init__(self, event_type: str, content: dict):
