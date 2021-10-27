@@ -165,13 +165,18 @@ async def send_geeks_welcome_message(room: MatrixRoom, event: RoomMemberEvent):
     with open("./static/welcome-message.txt", "r") as f:
         return await room_send_text(new_room.room_id, f.read().format(member_name))
 
+def should_pm_welcome(room: MatrixRoom, event: RoomMemberEvent):
+    return event.membership == "join" \
+        and room.room_id == botconfig.ROOM_ID_GEEKS \
+        and event.prev_content is None
+
 # called when someone's membership in a room changes
 async def on_membership(room: MatrixRoom, event: RoomMemberEvent):
     if not time_filter(event):
         return
 
     # PM newbies
-    if event.membership == "join" and room.room_id == botconfig.ROOM_ID_GEEKS:
+    if should_pm_welcome(room, event) is True:
         return await send_geeks_welcome_message(room, event)
 
     return
