@@ -43,6 +43,24 @@ async def room_send_text(room_id, text):
         }
     )
 
+async def room_send_code(room_id, text):
+    global g_client
+
+    if g_client is None:
+        print("ERROR | Tried to send room text with a null client")
+        return
+
+    return await g_client.room_send(
+        room_id = room_id,
+        message_type="m.room.message",
+        content = {
+            "msgtype": "m.text",
+            "body": str(text),
+            "format": "org.matrix.custom.html",
+            "formatted_body": "<pre><code>" + str(text) + "</code></pre>"
+        }
+    )
+
 def time_filter(event):
     # on startup, the bot will receive every historical event ever...
     # make sure we don't run commands from the past! 
@@ -63,6 +81,14 @@ def time_filter(event):
 async def handle_command_result(room: MatrixRoom, response: command.CommandResponse):
     global g_client
 
+    # code response is a subclass of text response, so be sure to always check
+    # for it first.
+    if isinstance(response, command.CommandCodeResponse):
+        log_response = response.text.replace("\n", "\\n")
+        print(f"-> {log_response}")
+
+        return await room_send_code(room.room_id, response)
+    
     if isinstance(response, command.CommandTextResponse):
         log_response = response.text.replace("\n", "\\n")
         print(f"-> {log_response}")
