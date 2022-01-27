@@ -23,6 +23,12 @@ class CommandTextResponse(CommandResponse):
     def __len__(self):
         return len(self.text)
 
+# code responses get sent in a code block
+class CommandCodeResponse(CommandTextResponse):
+    def __init__(self, text: str):
+        super().__init__(text)
+        self.is_code = True
+
 # state responses get sent as state changes (e.g. topic changes)
 class CommandStateResponse(CommandResponse):
     def __init__(self, event_type: str, content: dict):
