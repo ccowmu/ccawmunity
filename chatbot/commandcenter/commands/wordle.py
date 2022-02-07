@@ -151,6 +151,7 @@ class WordleCommand(Command):
                 if word[i] == answerl[i]:
                     # "green"
                     info += word[i].upper()
+                    answerl[i] = " " # don't double count stuff
                 elif word[i] in answerl:
                     # "yellow"
                     info += word[i].lower()
