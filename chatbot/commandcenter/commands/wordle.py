@@ -2,6 +2,8 @@ from ..command import Command
 from ..eventpackage import EventPackage
 from ..command import CommandCodeResponse as CCR
 
+import botconfig
+
 import os, random
 
 LOCAL = os.path.dirname(os.path.realpath(__file__))
@@ -21,7 +23,7 @@ def log(string):
 def list2str(l):
     s = ""
     for i in l:
-        s += i
+        s += str(i)
     return s
 
 class WordleCommand(Command):
@@ -32,7 +34,7 @@ class WordleCommand(Command):
         self.help = "$wordle | Play wordle!"
         
         self.author = "spacedog"
-        self.last_updated = "Feb. 6, 2022"
+        self.last_updated = "Feb. 7, 2022"
 
         global ALLOWED
         global ANSWERS
@@ -44,20 +46,23 @@ class WordleCommand(Command):
             ANSWERS = f.read().split("\n")
         log("Success!")
 
+        self.rid = botconfig.ROOM_ID_BOTTOY
         self.reset()
 
     def get_answer(self):
-        return self.db_get(ANSWER).decode()
+        a = self.db_get(self.rid + ANSWER)
+        return a.decode() if a is not None else None
 
     def get_history(self):
-        return self.db_list_get(HISTORY)
+        h = self.db_list_get(self.rid + HISTORY)
+        return [i.decode() for i in h]
 
     def get_history_len(self):
-        return self.db_list_len(HISTORY)
+        return self.db_list_len(self.rid + HISTORY)
 
     def get_history_item(self, n):
         history = self.get_history()
-        return history[n].decode() if (history is not None and len(history) >= (n + 1)) else "-----"
+        return history[n] if (history is not None and len(history) >= (n + 1)) else "-----        "
 
     def get_points(self, user):
         pts = self.db_hash_get(POINTS, user)
@@ -68,17 +73,20 @@ class WordleCommand(Command):
         return self.get_points(user)
 
     def log_guess(self, word):
-        self.db_rpush(HISTORY, word)
+        self.db_rpush(self.rid + HISTORY, word)
         history = self.get_history()
         return len(history)
 
     def get_avail(self):
-        return self.db_get(AVAIL_LETTERS).decode()
+        return self.db_get(self.rid + AVAIL_LETTERS).decode()
+    
+    def set_avail(self, avail):
+        self.db_set(self.rid + AVAIL_LETTERS, avail)
 
     def reset(self):
-        self.db_set(ANSWER, random.choice(ANSWERS))
-        self.db_del(HISTORY)
-        self.db_set(AVAIL_LETTERS, "qwertyuiop\nasdfghjkl\nzxcvbnm")
+        self.db_set(self.rid + ANSWER, random.choice(ANSWERS))
+        self.db_del(self.rid + HISTORY)
+        self.db_set(self.rid + AVAIL_LETTERS, "q w e r t y u i o p\na s d f g h j k l\n  z x c v b n m")
 
         log("picked " + self.get_answer())
     
@@ -86,25 +94,26 @@ class WordleCommand(Command):
         return "Guess words with \"$wordle [guess]\"."
 
     def run(self, event_pack: EventPackage):
-        if self.get_answer != "":
-            # in-progress game
-            return self.guess(event_pack)
-        else:
-            # restart game
-            # in theory this should never happen
+        self.rid = event_pack.room_id
+
+        if self.rid == botconfig.ROOM_ID_GEEKS:
+            return CCR("Only nerds play wordle in #geeks (try #bottoy or a dm).")
+
+        if self.get_answer() is None:
             self.reset()
-            return CCR("Game started. " + self.usage()) 
+            log("Reset because of empty game")
+
+        return self.guess(event_pack)
 
     def chart(self):
-        chart  = "1. " + self.get_history_item(0) + "\n"
-        chart += "2. " + self.get_history_item(1) + "\n"
-        chart += "3. " + self.get_history_item(2) + "\n"
-        chart += "4. " + self.get_history_item(3) + "\n"
+        avails = self.get_avail().splitlines()
+
+        chart  = "1. " + self.get_history_item(0) + "  Letters still available:" + "\n"
+        chart += "2. " + self.get_history_item(1) + "  " + avails[0] + "\n"
+        chart += "3. " + self.get_history_item(2) + "  " + avails[1] + "\n"
+        chart += "4. " + self.get_history_item(3) + "  " + avails[2] + "\n"
         chart += "5. " + self.get_history_item(4) + "\n"
         chart += "6. " + self.get_history_item(5) + "\n"
-        chart += "\n"
-        chart += "Letters still available:\n"
-        chart += self.get_avail()
         return chart
 
     def guess(self, event_pack: EventPackage):
@@ -128,6 +137,15 @@ class WordleCommand(Command):
             # invalid word
             return CCR("That's not a word!")
 
+        # duplicate words
+        history = self.get_history()
+        # history is stored as the guess plus the info on the end, which we don't
+        # care about here
+        for line in history:
+            old_word = line.split(" ")[0]
+            if word == old_word:
+                return CCR("\"" + word + "\" was already guessed!")
+
         # evaluate guess
         answer = self.get_answer()
         guess_number = self.get_history_len() + 1
@@ -146,25 +164,34 @@ class WordleCommand(Command):
             self.reset()
             return CCR("Incorrect! You're out of guesses. The answer was \"" + answer + "\".")
         else:
-            info = "("
+            info = list(".....")
+
+            # process greys
             for i in range(5):
-                if word[i] == answerl[i]:
-                    # "green"
-                    info += word[i].upper()
-                    answerl[i] = " " # don't double count stuff
-                elif word[i] in answerl:
-                    # "yellow"
-                    info += word[i].lower()
-                    answerl[i] = " " # don't double count stuff
-                else:
-                    # "grey"
-                    info += "."
+                if word[i] not in answer:
                     avail = avail.replace(word[i], ".")
             
-            info += ")"
+            # process greens
+            for i in range(5):
+                if word[i] == answerl[i]:
+                    info[i] = word[i].upper()
+                    answerl[i] = " " # don't double count stuff
+
+            # process yellows
+            for i in range(5):
+                if word[i] in answerl:
+                    info[i] = word[i].lower()
+                    # replace first instance
+                    for j, l in enumerate(answerl):
+                        if l == word[i]:
+                            answerl[j] = " "
+                            break
+
+            info = "(" + list2str(info) + ")"
+
             self.log_guess(word + " " + info)
 
             # store avail
-            self.db_set(AVAIL_LETTERS, avail)
+            self.set_avail(avail)
 
             return CCR(self.chart())
