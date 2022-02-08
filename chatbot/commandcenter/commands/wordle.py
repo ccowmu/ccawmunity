@@ -179,7 +179,7 @@ class WordleCommand(Command):
 
             # process yellows
             for i in range(5):
-                if word[i] in answerl:
+                if info[i] != word[i].upper() and word[i] in answerl:
                     info[i] = word[i].lower()
                     # replace first instance
                     for j, l in enumerate(answerl):
