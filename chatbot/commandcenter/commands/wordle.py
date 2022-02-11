@@ -128,7 +128,7 @@ class WordleCommand(Command):
             pts_s = nick + ", you have " + str(pts) + " points."
             return CCR(pts_s + "\n" + self.chart())
         
-        word = body[1].lower()
+        word = ''.join(body[1].lower().split())
         if len(word) != 5:
             # invalid length
             return CCR("Guesses have to be 5 letter words.")
