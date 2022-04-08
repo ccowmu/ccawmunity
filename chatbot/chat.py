@@ -2,19 +2,18 @@
 
 import asyncio
 import getpass
+import re
+import shlex
 from os import environ
 
+from nio import (AsyncClient, MatrixRoom, RoomMemberEvent, RoomMessageImage,
+                 RoomMessageText, RoomMessageVideo)
+
 import botconfig
-
-from nio import AsyncClient, MatrixRoom
-from nio import RoomMessageText, RoomMessageImage, RoomMessageVideo, RoomMemberEvent
-
+import timekeeping as tk
+from commandcenter import command
 from commandcenter.commander import Commander
 from commandcenter.eventpackage import EventPackage
-
-from commandcenter import command
-
-import timekeeping as tk
 
 g_commander = Commander(botconfig.command_prefix, botconfig.command_timeout)
 
@@ -63,8 +62,8 @@ async def room_send_code(room_id, text):
 
 def time_filter(event):
     # on startup, the bot will receive every historical event ever...
-    # make sure we don't run commands from the past! 
-    # we wait to process anything until we see this session's unique uuid    
+    # make sure we don't run commands from the past!
+    # we wait to process anything until we see this session's unique uuid
     if not tk.time_has_started() and hasattr(event, "body") and event.body == tk.get_session_startup_string():
         tk.start_time(event.server_timestamp)
         return False
@@ -74,6 +73,21 @@ def time_filter(event):
 
     # Only process events that happened after the beginning of time
     return event.server_timestamp >= tk.get_beginning_of_time()
+
+
+# safely convert input string into a list
+def safe_split(text):
+    # Matches last " char in string
+    pattern = re.compile(r'\"(?!.*\")')
+    # If there's a quote that isn't closed, replace the last " char with '
+    text = pattern.sub("'", text) if text.count('"') % 2 != 0 else text
+
+    # split string on whitespace, preserving anything in double quotes
+    s = shlex.shlex(text, posix=True)
+    s.quotes = '"'
+    s.whitespace_split = True
+    s.commenters = ''
+    return list(s)
 
 # -- callbacks -----------------------------------------------------------------
 
@@ -88,7 +102,7 @@ async def handle_command_result(room: MatrixRoom, response: command.CommandRespo
         print(f"-> {log_response}")
 
         return await room_send_code(room.room_id, response)
-    
+
     if isinstance(response, command.CommandTextResponse):
         log_response = response.text.replace("\n", "\\n")
         print(f"-> {log_response}")
@@ -126,7 +140,7 @@ async def on_message(room: MatrixRoom, event: RoomMessageText):
         return
 
     # construct data for command machinery
-    argv = event.body.split(" ")
+    argv = safe_split(event.body)
     command_string = argv[0]
     event_package = EventPackage(
         body=argv, room_id=room.room_id, sender=event.sender, event=event)
