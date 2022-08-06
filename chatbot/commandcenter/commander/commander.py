@@ -56,7 +56,7 @@ class Commander:
                 else:
                     return self.get_help_all()
 
-            if command_string_normalized == "$info":
+            if command_string_normalized == "$info" or command_string_normalized == "$blame":
                 print("Built in command: $info")
                 if len(event_pack.body) >= 2:
                     return self.get_info(event_pack.body[1].replace(self.prefix, "$"))
@@ -114,6 +114,8 @@ class Commander:
             return self.command_not_recognized()
 
     def get_info(self, command_string):
+        if command_string[0] != '$':
+            command_string = "$" + command_string
         if command_string in self.commands:
             command = self.commands[command_string]
             output = "Info for " + command_string.replace("$", self.prefix) + "...\n"
