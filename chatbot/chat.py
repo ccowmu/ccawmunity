@@ -60,6 +60,24 @@ async def room_send_code(room_id, text):
         }
     )
 
+async def room_send_rainbow(room_id, text, htmlText):
+    global g_client
+
+    if g_client is None:
+        print("ERROR | Tried to send room text with a null client")
+        return
+
+    return await g_client.room_send(
+        room_id = room_id,
+        message_type="m.room.message",
+        content = {
+            "msgtype": "m.text",
+            "body": str(text),
+            "format": "org.matrix.custom.html",
+            "formatted_body": htmlText
+        }
+    )
+
 def time_filter(event):
     # on startup, the bot will receive every historical event ever...
     # make sure we don't run commands from the past!
@@ -102,6 +120,18 @@ async def handle_command_result(room: MatrixRoom, response: command.CommandRespo
         print(f"-> {log_response}")
 
         return await room_send_code(room.room_id, response)
+
+    if isinstance(response, command.CommandRainbowResponse):
+        log_response = response.text.replace("\n", "\\n")
+        print(f"-> {log_response}")
+
+        if room.room_id == botconfig.ROOM_ID_GEEKS:
+            if len(response) <= botconfig.spam_limit:
+                return await room_send_rainbow(room.room_id, response, response.htmlText)
+            else:
+                return await room_send_text(room.room_id, "Too spammy! >:(")
+        else:
+            return await room_send_rainbow(room.room_id, response, response.htmlText)
 
     if isinstance(response, command.CommandTextResponse):
         log_response = response.text.replace("\n", "\\n")
