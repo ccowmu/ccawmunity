@@ -5,6 +5,7 @@ import random
 
 class RandomCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$random"
         self.help = "$random | Gets a random integer within a range (inclusive). | Usage: $random 1 10"
         self.author = "spacedog"

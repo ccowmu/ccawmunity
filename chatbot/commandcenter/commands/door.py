@@ -7,6 +7,7 @@ import requests
 
 class DoorCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$door"
         self.help = "$door | Tells the status of the cclub office door"
         self.author = "sweeney and spacedog"

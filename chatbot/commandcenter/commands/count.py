@@ -5,6 +5,7 @@ from ..eventpackage import EventPackage
 
 class CountCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$count" # this is required in order for the command to run!
         self.help = "$count | Count for fun!"
         self.author = "spacedog"

@@ -5,6 +5,7 @@ import botconfig
 
 class PortCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$port" # this is required in order for the command to run!
         
         self.help = "$port | Reports what port the bot's listeners are listening on."

@@ -5,8 +5,9 @@ from ..eventpackage import EventPackage
 
 class HelpCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$help" # this is required in order for the command to run!
-        self.help = "$help | Learn how to use commands. | Usage: $help or $help <command (including the $)>"
+        self.help = "$help | Learn how to use commands. | Usage: $help or $help <$command (with or without the $)>"
         self.author = "spacedog"
         self.last_updated = "Oct. 11, 2018"
 
@@ -15,8 +16,9 @@ class HelpCommand(Command):
 
 class InfoCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$info" # this is required in order for the command to run!
-        self.help = "$info | Display info about a command. | Usage: $info <command (including the $)>"
+        self.help = "$info | Display info about a command. | Usage: $info <$command (with or without the $)>"
         self.author = "spacedog"
         self.last_updated = "Oct. 11, 2018"
 

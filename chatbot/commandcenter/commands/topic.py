@@ -6,6 +6,7 @@ from nio.event_builders.state_events import ChangeTopicBuilder
 
 class TopicCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$topic"
         self.help = "$topic | modify the current channel topic"
         self.author = "sphinx"

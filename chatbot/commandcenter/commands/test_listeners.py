@@ -8,6 +8,7 @@ import json
 
 class TestListenersCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$test_listeners"
         
         self.help = "$test_listeners | Tests if the listener functionality of the bot is functioning by sending a test POST request."

@@ -17,6 +17,9 @@ class CommandTextResponse(CommandResponse):
     def __init__(self, text: str):
         super().__init__()
         self.text = text
+        self.is_code = None
+        self.is_big = None
+        self.is_rainbow = None
 
     def __str__(self):
         return self.text
@@ -30,71 +33,23 @@ class CommandCodeResponse(CommandTextResponse):
         super().__init__(text)
         self.is_code = True
 
+class CommandBigResponse(CommandTextResponse):
+    def __init__(self, text: str):
+        super().__init__(text)
+        self.is_big = True
+
 # rainbow responses get converted to html rainbow
 class CommandRainbowResponse(CommandTextResponse):
     def __init__(self, text: str):
         super().__init__(text)
         self.text = text
-        self.htmlText = None
-        self.textToHtmlRainbow()
+        self.is_rainbow = True
 
     def __str__(self):
         return self.text
 
     def __len__(self):
         return len(self.text)
-
-    def textToHtmlRainbow(self):
-        textlen = len(self.text)
-        frequency = (2 * math.pi) / textlen
-        output = ""
-        for i in range(textlen):
-            # no need to change color on whitespace
-            if self.text[i] == " ":
-                output = output + " "
-                continue
-            # math wizardry to map character position in string to CIELAB color space
-            a = 127 * math.cos(i * frequency)
-            b = 127 * math.sin(i * frequency)
-            rgb = self.labToRGB(75, a, b)
-            red = f'{rgb[0]:x}'.zfill(2)
-            green = f'{rgb[1]:x}'.zfill(2)
-            blue = f'{rgb[2]:x}'.zfill(2)
-            output = output + '<font color="#{}{}{}">{}</font>'.format(red,green,blue,self.text[i])
-        self.htmlText = output
-
-
-
-    def labToRGB(self, l, a, b):
-        # more math wizardry to convert CIELAB color to CIEXYZ color as an intermediate step
-        y = (l + 16) / 116
-        x = self.adjustXYZ(y + a / 500) * 0.9505
-        z = self.adjustXYZ(y - b / 200) * 1.089
-        y = self.adjustXYZ(y)
-
-        # linear transformation from CIEXYZ to RGB
-        red = 3.24096994*x - 1.53738318*y - 0.49861076*z
-        green = -0.96924364*x + 1.8759675*y + 0.04155506*z
-        blue = 0.05563008*x - 0.20397696*y + 1.05697151*z
-
-        return [self.adjustRGB(red), self.adjustRGB(green), self.adjustRGB(blue)]
-
-    def adjustXYZ(self, v):
-        if v > 0.2069:
-            return v**3
-        return 0.1284 * v - 0.01771
-
-    def gammaCorrection(self, v):
-        if v <= 0.0031308:
-            return 12.92 * v
-        return 1.055 * v**(1/2.4) - 0.055
-
-    def adjustRGB(self, v):
-        corrected = self.gammaCorrection(v)
-
-        limited = min(max(corrected, 0), 1)
-
-        return round(limited * 255)
 
 
 # state responses get sent as state changes (e.g. topic changes)
@@ -114,7 +69,8 @@ class Command:
         self.author = "...who knows? (They forgot to set the author value!)"
         self.last_updated = "20XX (No date found)"
         self.raw_db = False
-        
+        self.aliases = []
+
         # if true, self.sniff_message() will be invoked for EVERY message.
         self.is_nosy = False
 
@@ -139,6 +95,9 @@ class Command:
     def get_last_updated(self):
         return str(self.last_updated)
 
+    def get_aliases(self):
+        return self.aliases
+
     def get_nosy(self):
         if hasattr(self, "is_nosy"):
             return self.is_nosy
@@ -157,7 +116,7 @@ class Command:
 
     def db_set_if_not_exists(self, key, value):
         return redis.setnx(self._db_create_namespaced_key(key), value)
-    
+
     def db_get(self, key):
         return redis.get(self._db_create_namespaced_key(key))
 
@@ -169,7 +128,7 @@ class Command:
 
     def db_incrby(self, key, amount):
         return redis.incrby(self._db_create_namespaced_key(key), amount)
-    
+
     def db_lpush(self, list, value):
         return redis.lpush(self._db_create_namespaced_key(list), value)
 
@@ -210,11 +169,11 @@ class Command:
 
     def db_list_trim(self, list, start, end):
         return redis.ltrim(self._db_create_namespaced_key(list), start, end)
-    
+
     # shortcut to get whole list
     def db_list_get(self, key):
         return self.db_list_range(key, 0, -1)
-    
+
     def db_set_add(self, set, value):
         return redis.sadd(self._db_create_namespaced_key(set), value)
 
@@ -244,7 +203,7 @@ class Command:
 
     def db_set_sorted_get(self, set):
         return self.db_set_sorted_range(self._db_create_namespaced_key(set), 0, -1)
-    
+
     def db_hash_set(self, object, key, value):
         return redis.hset(self._db_create_namespaced_key(object), key, value)
 

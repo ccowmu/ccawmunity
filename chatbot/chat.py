@@ -60,7 +60,7 @@ async def room_send_code(room_id, text):
         }
     )
 
-async def room_send_rainbow(room_id, text, htmlText):
+async def room_send_big(room_id, text):
     global g_client
 
     if g_client is None:
@@ -74,7 +74,25 @@ async def room_send_rainbow(room_id, text, htmlText):
             "msgtype": "m.text",
             "body": str(text),
             "format": "org.matrix.custom.html",
-            "formatted_body": htmlText
+            "formatted_body": "<h1>" + str(text) + "</h1>"
+        }
+    )
+
+async def room_send_rainbow(room_id, text):
+    global g_client
+
+    if g_client is None:
+        print("ERROR | Tried to send room text with a null client")
+        return
+
+    return await g_client.room_send(
+        room_id = room_id,
+        message_type="m.room.message",
+        content = {
+            "msgtype": "m.text",
+            "body": str(text),
+            "format": "org.matrix.custom.html",
+            "formatted_body": str(text)
         }
     )
 
@@ -127,11 +145,17 @@ async def handle_command_result(room: MatrixRoom, response: command.CommandRespo
 
         if room.room_id == botconfig.ROOM_ID_GEEKS:
             if len(response) <= botconfig.spam_limit:
-                return await room_send_rainbow(room.room_id, response, response.htmlText)
+                return await room_send_rainbow(room.room_id, response)
             else:
                 return await room_send_text(room.room_id, "Too spammy! >:(")
         else:
-            return await room_send_rainbow(room.room_id, response, response.htmlText)
+            return await room_send_rainbow(room.room_id, response)
+
+    if isinstance(response, command.CommandBigResponse):
+        log_response = response.text.replace("\n", "\\n")
+        print(f"-> {log_response}")
+
+        return await room_send_big(room.room_id, response)
 
     if isinstance(response, command.CommandTextResponse):
         log_response = response.text.replace("\n", "\\n")
