@@ -3,6 +3,7 @@ from ..eventpackage import EventPackage
 
 class TestCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$test"
         self.help = "$test | No parameters requirerd, yells at dolphin."
         self.author = "strongth"

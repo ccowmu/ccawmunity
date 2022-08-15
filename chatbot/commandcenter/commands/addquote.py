@@ -3,6 +3,7 @@ from ..eventpackage import EventPackage
 
 class AddQuoteCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$addquote" # this is required in order for the command to run!
         self.help = "$addquote | usage: $addquote <username>: <quote>"
         self.author = "spacedog"

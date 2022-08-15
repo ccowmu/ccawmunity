@@ -5,6 +5,7 @@ import random
 
 class GetQuoteCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$getquote" # this is required in order for the command to run!
         self.help = "$getquote | usage: random quote: $getquote, quote number: $getquote <number>, quote from user: $getquote username"
         self.author = "spacedog"

@@ -5,8 +5,9 @@ import requests
 # note: this command only works when run on a machine in same subnet as dot.
 # (this command will work when run on dot.)
 
-class FloorCOmmand(Command):
+class FloorCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$floor"
         self.help = "$floor | Tells the status of the cclub office floor"
         self.author = "presto"

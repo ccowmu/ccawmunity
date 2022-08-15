@@ -8,6 +8,7 @@ import json
 
 class MCOnlineCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$MCOnline"
         self.help = "$MCOnline | Tells who is online on the minecraft server"
         self.author = "presto"

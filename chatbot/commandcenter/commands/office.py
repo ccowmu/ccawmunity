@@ -7,6 +7,7 @@ import requests
 
 class OfficeCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$office"
         self.help = "$office | Lists people connected to CClub network | Usage: $office, register: $office -r <mac>, deregister: $office -d <mac>, list your macs: $office -l"
         self.author = "hellbacon and spacedog"

@@ -8,6 +8,8 @@ from ..eventpackage import EventPackage
 class TemplateCommand(Command):
     # set the name and author of the command inside of its constructor.
     def __init__(self):
+        super().__init__() # this is necessary in order to initialize optional attributes with default values
+
         self.name = "$template" # this is required in order for the command to run!
         
         # define what will be shown when someone calls "help $<your command>"

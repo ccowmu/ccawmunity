@@ -10,19 +10,29 @@ from ..commands import *
 from .builtin import *
 
 from ..command import Command
+from ..command import CommandCodeResponse
 from ..eventpackage import EventPackage
 
 class Commander:
     def __init__(self, prefix = "$", timeout = 3):
         self.commands = {}
+        self.alias_map = {}
         self.prefix = prefix
         self.timeout = timeout
-
+        self.command_names = []
         print("Prefix: " + self.prefix)
 
         for command_class in Command.__subclasses__():
             command = command_class()
-            self.commands[command.get_name()] = command
+            command_name = command.get_name()
+            self.commands[command_name] = command
+            self.command_names.append(command_name)
+
+            # map command aliases to initialized command objects, and add them to the list of names
+            command_aliases = command.get_aliases()
+            if command_aliases:
+                for alias in command_aliases:
+                    self.alias_map[alias] = command_name
 
         print("Commander loaded with commands:")
         print(self.get_help_all())
@@ -80,12 +90,31 @@ class Commander:
                 if p.is_alive():
                     print(f"Commander: killing a command after timeout. ({self.timeout} seconds)")
                     # NOTE:
-                    # terminating the process corrupts the pipe created above. 
+                    # terminating the process corrupts the pipe created above.
                     # this is fine as long as we don't use it again.
-                    p.terminate() 
+                    p.terminate()
                     return self.command_timed_out(command.get_name())
 
                 # if the process wasn't terminated, it's return result will be in the pipe.
+                return recv_end.recv()
+            elif command_string_normalized in self.alias_map:
+                real_command_name = self.alias_map[command_string_normalized]
+                command = self.commands[real_command_name]
+
+                # lazily copying the code from the first case because refactoring is hard
+
+                recv_end, send_end = multiprocessing.Pipe(False)
+
+                p = multiprocessing.Process(target=self.start_command_process, args=(command, event_pack, send_end))
+
+                p.start()
+                p.join(self.timeout)
+
+                if p.is_alive():
+                    print(f"Commander: killing a command after timeout. ({self.timeout} seconds)")
+                    p.terminate()
+                    return self.command_timed_out(command.get_name())
+
                 return recv_end.recv()
             else:
                 return self.command_not_recognized()
@@ -106,16 +135,16 @@ class Commander:
             pipe.send(command.run(event_pack))
         except Exception as e:
             pipe.send("{} failed. Reason: {}".format(command.get_name(), e))
-            
+
     def get_help(self, command_string):
+        command_string = self.add_prefix(command_string)
         if command_string in self.commands:
             return self.commands[command_string].get_help().replace("$", self.prefix)
         else:
             return self.command_not_recognized()
 
     def get_info(self, command_string):
-        if command_string[0] != '$':
-            command_string = "$" + command_string
+        command_string = self.add_prefix(command_string)
         if command_string in self.commands:
             command = self.commands[command_string]
             output = "Info for " + command_string.replace("$", self.prefix) + "...\n"
@@ -125,14 +154,24 @@ class Commander:
         else:
             return self.command_not_recognized()
 
+    def add_prefix(self, command_string):
+        if command_string[0] == self.prefix:
+            # prefix is already there, nothing to do
+            return command_string
+        else:
+            return self.prefix + command_string
+
     def get_help_all(self):
         command_list = ""
         for label in self.commands:
             command_list += self.get_help(label) + "\n"
-        return command_list
+        return CommandCodeResponse(command_list)
 
     def command_not_recognized(self):
         return "Command not recognized, please try \"$help\" for available commands".replace("$", self.prefix)
 
     def command_timed_out(self, command_string):
         return f"{command_string} timed out. (Command time limit is {self.timeout} seconds.)"
+
+    def get_command_names(self):
+        return self.command_names
