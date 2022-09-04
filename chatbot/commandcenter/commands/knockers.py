@@ -5,7 +5,7 @@ from ..command import Command
 from ..eventpackage import EventPackage
 import random
 
-class TemplateCommand(Command):
+class KnockersCommand(Command):
     
     def __init__(self):
         super().__init__() 
