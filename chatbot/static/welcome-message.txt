@@ -3,6 +3,13 @@ Hi, {}!
 Welcome to Computer Club at WMU! We're glad to have you.
 I'm the club's bot. I'm written in Python 3 and you can read my source code here: https://github.com/ccowmu/ccawmunity
 
+We try not to have a hard list of rules as we are primarily students and don't have enough time to heavily moderate every room.
+That being said, we are an inclusive space and any form of Hate Speech (Racism, Misogyny, Homophobia, or other forms of bigotry) will not be tolerated.
+
+All of this can be boiled down to one primary rule: Respect Others.
+
+Please respect the decisions of the Admins and Moderators when enforcing these rules.
+
 Here's a rundown of our main rooms:
 #geeks:cclub.cs.wmich.edu - Our main general chat room. No direct image posting, please.
 #img:cclub.cs.wmich.edu - Post images here and then post the link in #geeks.
