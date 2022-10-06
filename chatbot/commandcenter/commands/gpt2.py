@@ -8,6 +8,7 @@ import os
 class GPT2Command(Command):
     # set the name and author of the command inside of its constructor.
     def __init__(self):
+        super().__init__()
         self.name = "$gpt2" # this is required in order for the command to run!
         
         self.help = "$gpt2 | Complete text. usage: $gpt2 <starting text here>"

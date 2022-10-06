@@ -11,6 +11,7 @@ from os import environ
 
 class ExpiryCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$expiry"
         self.help = "$expiry | Gets a member's expiration date from their UID. | Usage: $expiry dolphin"
         self.author = "nothingbutflowers, sphinx"

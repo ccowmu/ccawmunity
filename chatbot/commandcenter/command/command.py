@@ -2,6 +2,7 @@ from ..eventpackage import EventPackage
 
 from redis import Redis
 redis = Redis(host="redis", db=0)
+import math
 
 # responses that a command can send back up.
 class CommandResponse:
@@ -16,6 +17,9 @@ class CommandTextResponse(CommandResponse):
     def __init__(self, text: str):
         super().__init__()
         self.text = text
+        self.is_code = None
+        self.is_big = None
+        self.is_rainbow = None
 
     def __str__(self):
         return self.text
@@ -28,6 +32,25 @@ class CommandCodeResponse(CommandTextResponse):
     def __init__(self, text: str):
         super().__init__(text)
         self.is_code = True
+
+class CommandBigResponse(CommandTextResponse):
+    def __init__(self, text: str):
+        super().__init__(text)
+        self.is_big = True
+
+# rainbow responses get converted to html rainbow
+class CommandRainbowResponse(CommandTextResponse):
+    def __init__(self, text: str):
+        super().__init__(text)
+        self.text = text
+        self.is_rainbow = True
+
+    def __str__(self):
+        return self.text
+
+    def __len__(self):
+        return len(self.text)
+
 
 # state responses get sent as state changes (e.g. topic changes)
 class CommandStateResponse(CommandResponse):
@@ -46,7 +69,8 @@ class Command:
         self.author = "...who knows? (They forgot to set the author value!)"
         self.last_updated = "20XX (No date found)"
         self.raw_db = False
-        
+        self.aliases = []
+
         # if true, self.sniff_message() will be invoked for EVERY message.
         self.is_nosy = False
 
@@ -71,6 +95,9 @@ class Command:
     def get_last_updated(self):
         return str(self.last_updated)
 
+    def get_aliases(self):
+        return self.aliases
+
     def get_nosy(self):
         if hasattr(self, "is_nosy"):
             return self.is_nosy
@@ -89,7 +116,7 @@ class Command:
 
     def db_set_if_not_exists(self, key, value):
         return redis.setnx(self._db_create_namespaced_key(key), value)
-    
+
     def db_get(self, key):
         return redis.get(self._db_create_namespaced_key(key))
 
@@ -101,7 +128,7 @@ class Command:
 
     def db_incrby(self, key, amount):
         return redis.incrby(self._db_create_namespaced_key(key), amount)
-    
+
     def db_lpush(self, list, value):
         return redis.lpush(self._db_create_namespaced_key(list), value)
 
@@ -142,11 +169,11 @@ class Command:
 
     def db_list_trim(self, list, start, end):
         return redis.ltrim(self._db_create_namespaced_key(list), start, end)
-    
+
     # shortcut to get whole list
     def db_list_get(self, key):
         return self.db_list_range(key, 0, -1)
-    
+
     def db_set_add(self, set, value):
         return redis.sadd(self._db_create_namespaced_key(set), value)
 
@@ -176,7 +203,7 @@ class Command:
 
     def db_set_sorted_get(self, set):
         return self.db_set_sorted_range(self._db_create_namespaced_key(set), 0, -1)
-    
+
     def db_hash_set(self, object, key, value):
         return redis.hset(self._db_create_namespaced_key(object), key, value)
 

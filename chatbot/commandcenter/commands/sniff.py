@@ -5,6 +5,7 @@ from ..eventpackage import EventPackage
 
 class SniffCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$sniff"
         self.help = "$sniff | I'm sniffing you."
         self.author = "spacedog"

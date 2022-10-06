@@ -8,6 +8,7 @@ regex = re.compile(r"([^\-\$ ]+|(?:\().+?(?:\)))(\+\+|--)")
 
 class KarmaCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$karma" # this is required in order for the command to run!
         self.help = "$karma | Display the karma of something. Usage: $karma <thing>"
         self.author = "spacedog"

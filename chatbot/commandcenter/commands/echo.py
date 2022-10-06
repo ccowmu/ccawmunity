@@ -4,6 +4,7 @@ from ..eventpackage import EventPackage
 
 class EchoCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$echo"
         self.help = "$echo | N parameters accepted separated by spaces, bot echoes them back to chat. | Usage: $echo arg1 arg2"
         self.author = "strongth"

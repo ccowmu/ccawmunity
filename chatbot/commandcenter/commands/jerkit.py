@@ -8,6 +8,7 @@ import random
 class JerkitCommand(Command):
     # set the name and author of the command inside of its constructor.
     def __init__(self):
+        super().__init__()
         self.name = "$jerkit" # this is required in order for the command to run!
         
         # define what will be shown when someone calls "help $<your command>"

@@ -9,6 +9,7 @@ import json
 
 class LedCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$led"
         self.help = "$led | Changes leds in club. e.g. $led #00ff22 {color, chase, rainbow, or random}"
         self.author = "spacedog"

@@ -8,6 +8,7 @@ import json
 
 class MCOnlineCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$inspire"
         self.help = "$inspire | Posts an inspirational quote"
         self.author = "presto"

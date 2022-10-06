@@ -28,6 +28,7 @@ def list2str(l):
 
 class WordleCommand(Command):
     def __init__(self):
+        super().__init__()
         self.name = "$wordle" # this is required in order for the command to run!
         
         # define what will be shown when someone calls "help $<your command>"
