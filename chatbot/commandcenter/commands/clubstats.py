@@ -10,6 +10,7 @@ from botconfig import clubstats_endpoint
 class ClubstatsCommand(Command):
     # set the name and author of the command inside of its constructor.
     def __init__(self):
+        super().__init__()
         self.name = "$clubstats" # this is required in order for the command to run!
         
         # define what will be shown when someone calls "help $<your command>"
@@ -26,11 +27,16 @@ class ClubstatsCommand(Command):
     # define what the command does here.
     # this function must return a string. the string will be sent to the room.
     def run(self, event_pack: EventPackage):
-        # print(event_pack)
-        return f"I smell... \"{self.last_sniffed}\"."
+        print(event_pack)
+        return f"HELLO CLUBSTATS."
 
 
     def sniff_message(self, event_pack: EventPackage):
         self.last_sniffed = " ".join(event_pack.body)
-        r = requests.post(clubstats_endpoint + '/new', event_pack)
+        endpoint = clubstats_endpoint + '/new'
+        print(f"Clubstats endpoint {endpoint}")
+        print(f"posting {event_pack.event}")
+        r = requests.post(endpoint)
+        print(f"Clubstats endpoint {endpoint}")
+        print(f"posting {event_pack.event}")
         return r.status_code

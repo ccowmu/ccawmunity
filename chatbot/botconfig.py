@@ -22,4 +22,4 @@ listener_port = 9999
 # command results this many characters or longer won't be sent to #geeks
 spam_limit = 1000
 
-clubstats_endpoint = ""
+clubstats_endpoint = "http://127.0.0.1:5000"
