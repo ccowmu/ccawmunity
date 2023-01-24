@@ -4,6 +4,7 @@
 from ..command import Command
 from ..eventpackage import EventPackage
 import requests
+import json
 from botconfig import clubstats_endpoint
 
 # create a class that inherits from Command
@@ -28,15 +29,26 @@ class ClubstatsCommand(Command):
     # this function must return a string. the string will be sent to the room.
     def run(self, event_pack: EventPackage):
         print(event_pack)
-        return f"HELLO CLUBSTATS."
+        endpoint = clubstats_endpoint + '/command'
+        command_data = " ".join(event_pack.body)
+        command_data = command_data.split(' ', 1)[1]
+        data = {"command": command_data}
+        print(data)
+        r = requests.post(endpoint, json=data)
+        content = r.content
+        print(content)
+        print(r.status_code)
+        return f"{content.decode()}"
 
 
     def sniff_message(self, event_pack: EventPackage):
-        self.last_sniffed = " ".join(event_pack.body)
+        self.last_sniffed = event_pack.event
         endpoint = clubstats_endpoint + '/new'
+        json_data = json.dumps(event_pack.event.source, indent=4)
+        # event_type = typeof(event_pack.event)
         print(f"Clubstats endpoint {endpoint}")
-        print(f"posting {event_pack.event}")
-        r = requests.post(endpoint)
+        print(f"posting {json_data}")
+        r = requests.post(endpoint, json=event_pack.event.source)
         print(f"Clubstats endpoint {endpoint}")
         print(f"posting {event_pack.event}")
         return r.status_code
