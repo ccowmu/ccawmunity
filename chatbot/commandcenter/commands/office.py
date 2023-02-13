@@ -22,7 +22,7 @@ class OfficeCommand(Command):
                 # register
                 nick = event_pack.sender.split(":")[0][1:] # gets username without :cclub.cs.wmich.edu
                 mac = event_pack.body[2]
-                text = requests.post("http://141.218.117.49:5001/reg", data={"nick": nick, "mac": mac}).text
+                text = requests.post("http://141.218.117.122:5001/reg", data={"nick": nick, "mac": mac}).text
                 if text == "success":
                     r = "Successfully registered!"
                 else:
@@ -31,7 +31,7 @@ class OfficeCommand(Command):
                 # deregister
                 nick = event_pack.sender.split(":")[0][1:] # gets username without :cclub.cs.wmich.edu
                 mac = event_pack.body[2]
-                text = requests.post("http://141.218.117.49:5001/dereg", data={"nick": nick, "mac": mac}).text
+                text = requests.post("http://141.218.117.122:5001/dereg", data={"nick": nick, "mac": mac}).text
                 if text == "success":
                     r = "Successfully deregistered!"
                 else:
@@ -40,14 +40,14 @@ class OfficeCommand(Command):
             if event_pack.body[1] == "-l":
                 # list users mac
                 nick = event_pack.sender.split(":")[0][1:] # gets username without :cclub.cs.wmich.edu
-                text = requests.post("http://141.218.117.49:5001/list", data={"nick": nick}).text
+                text = requests.post("http://141.218.117.122:5001/list", data={"nick": nick}).text
                 if text == "failure":
                     r = "There are no mac addresses registed for the username: " + nick
                 else:
                     r = text
         else:
             # just a query
-            r = requests.get("http://141.218.117.49:5001/plain").text
+            r = requests.get("http://141.218.117.122:5001/plain").text
             if not r.strip(): # empty response, noone is in the office.
                 r = "Noone is at Club... :("
 
