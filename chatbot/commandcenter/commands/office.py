@@ -12,6 +12,15 @@ class OfficeCommand(Command):
         self.help = "$office | Lists people connected to CClub network | Usage: $office, register: $office -r <mac>, deregister: $office -d <mac>, list your macs: $office -l"
         self.author = "hellbacon and spacedog"
         self.last_updated = "August 7th 2019"
+        self.base_url = "http://141.218.117.122:5001"
+    
+    def query(self, endpoint, data=None):
+        endpoint = endpoint.lstrip("/")
+        full_url = "{}/{}".format(self.base_url, endpoint)
+        if data:
+            return requests.post(full_url, data=data)
+        else:
+            return requests.post(full_url)
 
     def run(self, event_pack: EventPackage):
         r = ""
@@ -22,7 +31,7 @@ class OfficeCommand(Command):
                 # register
                 nick = event_pack.sender.split(":")[0][1:] # gets username without :cclub.cs.wmich.edu
                 mac = event_pack.body[2]
-                text = requests.post("http://141.218.117.122:5001/reg", data={"nick": nick, "mac": mac}).text
+                text = self.query("reg", {"nick": nick, "mac": mac}).text
                 if text == "success":
                     r = "Successfully registered!"
                 else:
@@ -31,7 +40,7 @@ class OfficeCommand(Command):
                 # deregister
                 nick = event_pack.sender.split(":")[0][1:] # gets username without :cclub.cs.wmich.edu
                 mac = event_pack.body[2]
-                text = requests.post("http://141.218.117.122:5001/dereg", data={"nick": nick, "mac": mac}).text
+                text = self.query("dereg", {"nick": nick, "mac": mac}).text
                 if text == "success":
                     r = "Successfully deregistered!"
                 else:
@@ -40,16 +49,15 @@ class OfficeCommand(Command):
             if event_pack.body[1] == "-l":
                 # list users mac
                 nick = event_pack.sender.split(":")[0][1:] # gets username without :cclub.cs.wmich.edu
-                text = requests.post("http://141.218.117.122:5001/list", data={"nick": nick}).text
+                text = self.query("list", {"nick": nick}).text
                 if text == "failure":
                     r = "There are no mac addresses registed for the username: " + nick
                 else:
                     r = text
         else:
             # just a query
-            r = requests.get("http://141.218.117.122:5001/plain").text
+            r = self.query("plain").text
             if not r.strip(): # empty response, noone is in the office.
                 r = "Noone is at Club... :("
-
 
         return r
