@@ -2,3 +2,4 @@ matrix-nio
 ldap3
 requests
 redis
+beautifulsoup4
