@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE_URL = 'https://wmich.edu/classlookup/wskctlg.wskctlg_menu'
-ARG_LIST = ['-crn', '-crs']
+ARG_LIST = ['-n', '-c', '-t', '-s']
 
 class ClassSection():
     def __init__(self, crn: str, section: str, date: str, day: str, time: str, insm: str, loc: str, instructor: str, credit: str, is_lab: bool = False) -> None:
@@ -23,10 +23,10 @@ class ClassSection():
         self.is_lab = is_lab
     
     def __str__(self):
-        return str(self.crn) + '' + str(self.section)
+        return 'CRN: ' + str(self.crn) + 'SECTION: ' + str(self.section)
     
     def __repr__(self) -> str:
-        return str(self.crn) + '' + str(self.section)
+        return 'CRN: ' + str(self.crn) + 'SECTION: ' + str(self.section)
 
 
 # create a class that inherits from Command
@@ -61,7 +61,12 @@ class CourseLookupCommand(Command):
                      'attr': '',
                      'subject': ''
                      }
-        form_data['crse'] = args['-crs']
+
+        form_data['crse'] = args['-c']
+        form_data['term'] = args['-t']
+        form_data['subject'] = args['-s']
+
+
         html = requests.post(BASE_URL, data=form_data).text
         soup = BeautifulSoup(html, 'html.parser')
         crns = soup.find_all('td', {'class': 'crn_td'})
@@ -87,14 +92,22 @@ class CourseLookupCommand(Command):
             credit = credits[i].text
             # seat
             courses.append(ClassSection(crn, section, date, day, insm, time, loc, instructor, credit))
-        return str(courses[0])
+        out = ''
+        if(len(courses) == 0):
+            return "No Courses Found"
+        for course in courses:
+            out += str(course) + '\n'
+        return out
 
 
     def parse_args(self, event_pack) -> dict:
         arg_dict: dict = {}
-        # Default arguments -h and -v to false
+        # Default arguments
         arg_dict['-h'] = False
         arg_dict['-v'] = False
+        arg_dict['-t'] = 202340
+        arg_dict['-s'] = 'CS'
+        arg_dict['-c'] = ''
         
 
         # Iterate through args and fill arg_dict
