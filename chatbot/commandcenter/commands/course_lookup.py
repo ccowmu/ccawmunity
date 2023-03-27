@@ -5,6 +5,7 @@ from ..command import Command
 from ..command import CommandCodeResponse
 from ..eventpackage import EventPackage
 import requests
+from datetime import datetime
 from bs4 import BeautifulSoup
 
 BASE_URL = 'https://wmich.edu/classlookup/wskctlg.wskctlg_menu'
@@ -34,7 +35,11 @@ class ClassSection():
         self.is_lab = is_lab
     
     def __str__(self):
-        return self.crse_num + ' ' + self.crse_name + ' ' + 'CRN: ' + str(self.crn) + ' ' + 'SECTION: ' + str(self.section)
+        out = self.crse_num + ' ' + self.crse_name
+        if(self.is_lab):
+           out += ' Lab'
+        out += ' ' + 'CRN: ' + str(self.crn) + ' ' + 'SECTION: ' + str(self.section) + ' INSTRUCTOR: ' + str(self.instructor)
+        return out
     
     def __repr__(self) -> str:
         return 'CRN: ' + str(self.crn) + 'SECTION: ' + str(self.section)
@@ -53,7 +58,7 @@ class CourseLookupCommand(Command):
         
         self.author = "acp"
         self.last_updated = "Mar 26, 2023"
-        self.aliases = ["lookup", "clookup", "course"]
+        self.aliases = ["$lookup", "$clookup", "$course"]
 
     # define what the command does here.
     # this function must return a string. the string will be sent to the room.
@@ -95,6 +100,13 @@ class CourseLookupCommand(Command):
         courses = []
         for i in range(len(crns)):
             crn = crns[i].findChild('td').text
+            lab_object = crns[i].find('td', {'class': 'linked_crse'})
+            lab_text = ''
+            if(lab_object):
+                lab_text = lab_object.text
+            lab_bool = False
+            if(lab_text == 'Lab'):
+                lab_bool = True
             section = sections[i].text
             crse = crses[i].findChild('a').get_text(separator='</b>').split('</b>')
             crse_num = crse[0]
@@ -104,10 +116,10 @@ class CourseLookupCommand(Command):
             insm = insms[i].text
             time = times[i].text
             loc = locs[i].text
-            instructor = instructors[i].text
+            instructor = instructors[i].get_text(separator='</b>').split('</b>')[0]
             credit = credits[i].text
-            courses.append(ClassSection(crn, section, crse_num, crse_name, date, day, insm, time, loc, instructor, credit))
-        out = 'The following are the first 50 courses that fit your query\n'
+            courses.append(ClassSection(crn, section, crse_num, crse_name, date, day, insm, time, loc, instructor, credit, lab_bool))
+        out = 'The following are the first 20 courses that fit your query\n'
         if(len(courses) == 0):
             return "No Courses Found"
         for course in courses:
@@ -120,11 +132,10 @@ class CourseLookupCommand(Command):
         # Default arguments
         arg_dict['-h'] = False
         arg_dict['-v'] = False
-        arg_dict['-t'] = 202340
+        arg_dict['-t'] = self.find_date()
         arg_dict['-s'] = 'CS'
         arg_dict['-c'] = ''
         
-
         # Iterate through args and fill arg_dict
         for i in range(len(event_pack.body)):
             if(i == 0):
@@ -136,3 +147,13 @@ class CourseLookupCommand(Command):
             elif(event_pack.body[i] in ARG_LIST and type(event_pack.body[i+1] == type(1))):
                 arg_dict[event_pack.body[i]] = event_pack.body[i + 1]
         return arg_dict
+    
+    def find_date(self):
+        now = datetime.now()
+        sem = 0
+        if(8 <= now.month <= 12):
+            sem = 40
+        if(1 <= now.month <= 4):
+            sem = 10
+        year = datetime.now().year
+        return str(year) + str(sem) 
