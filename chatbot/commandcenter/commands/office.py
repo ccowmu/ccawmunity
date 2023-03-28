@@ -20,7 +20,7 @@ class OfficeCommand(Command):
         if data:
             return requests.post(full_url, data=data)
         else:
-            return requests.post(full_url)
+            return requests.get(full_url)
 
     def run(self, event_pack: EventPackage):
         r = ""
