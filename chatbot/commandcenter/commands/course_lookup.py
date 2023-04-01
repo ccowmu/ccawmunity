@@ -13,7 +13,7 @@ ARG_LIST = ['-n', '-c', '-t', '-s', '-h']
 HELP_TEXT = ''' $courselookup | Pull information from WMU Course Catalog
 Usage: $courselookup <args>
 Arguments:
--c: CRN.
+-c: Course number.
 -t: Semester, defaults to current semester.
 -s: Subject, defaults to CS.
 -h: Print help text.
