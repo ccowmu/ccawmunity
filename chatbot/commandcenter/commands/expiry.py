@@ -16,7 +16,7 @@ class ExpiryCommand(Command):
         self.help = "$expiry | Gets a member's expiration date from their UID. | Usage: $expiry dolphin"
         self.author = "nothingbutflowers, sphinx"
         self.last_updated = "Jan. 26, 2021"
-        self.whitelist = ["alu", "kahrl", "sphinx", "acp_"]
+        self.whitelist = ["crosstangent", "kahrl", "sphinx", "rezenee"]
 
     def run(self, event_pack: EventPackage):
         # TODO: redo the logic here so code is not repeated, I tried and failed
