@@ -11,7 +11,7 @@ class TopicCommand(Command):
         self.help = "$topic | modify the current channel topic"
         self.author = "sphinx"
         self.last_updated = "May 16, 2020"
-        self.whitelist = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin]
+        self.whitelist = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin"]
 
     def run(self, event_pack: EventPackage):
         response = self._get_response(event_pack)
