@@ -8,11 +8,15 @@ class LetMeInCommand(Command):
         super().__init__()
         self.name = "$letmein"
         self.help = "$letmein | Unlocks the door for club members"
-        self.author = "Krackentosh"
+        self.author = "Lochlan McElroy"
         self.last_updated = "November 11th 2024"
 
     def run(self, event_pack: EventPackage):
-        # Send a request to the remote server to trigger the door unlock
+        # Check if the command is used correctly
+        if len(event_pack.body) < 1:
+            return "Usage: $letmein"
+
+        # Send a POST request to the server to unlock the door
         try:
             data = {
                 "status": {
@@ -20,11 +24,12 @@ class LetMeInCommand(Command):
                 }
             }
             response = requests.post("http://cclub.cs.wmich.edu:8878", data=json.dumps(data))
-            
+
+            # Check server response
             if response.status_code == 200:
                 return "Door is unlocking..."
             else:
-                return "Failed to unlock the door. Server error."
+                return f"Failed to unlock the door. Server returned status code {response.status_code}."
 
         except Exception as e:
             print(f"Error sending request: {e}")
