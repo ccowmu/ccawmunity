@@ -2,7 +2,6 @@ from ..command import Command
 from ..eventpackage import EventPackage
 import requests
 import json
-import threading
 import time
 
 class LetMeInCommand(Command):
@@ -17,8 +16,8 @@ class LetMeInCommand(Command):
         if len(event_pack.body) < 1:
             return "Usage: $letmein"
 
-        # Send a POST request to unlock the door
         try:
+            # Send a POST request to unlock the door
             data = {
                 "status": {
                     "letmein": True
@@ -27,9 +26,22 @@ class LetMeInCommand(Command):
             response = requests.post("http://dot.cs.wmich.edu:8878", data=json.dumps(data))
 
             if response.status_code == 200:
-                # Start a background thread to reset the status after 8 seconds
-                threading.Thread(target=self.reset_letmein_status).start()
-                return "Door is unlocking..."
+                # Wait for 5 seconds before resetting the status
+                time.sleep(5)
+
+                # Reset letmein status to False
+                data_reset = {
+                    "status": {
+                        "letmein": False
+                    }
+                }
+                reset_response = requests.post("http://dot.cs.wmich.edu:8878", data=json.dumps(data_reset))
+
+                if reset_response.status_code == 200:
+                    return "Door unlocked and now locked again."
+                else:
+                    return "Failed to reset door status."
+
             else:
                 return f"Failed to unlock the door. Server returned status code {response.status_code}."
 
@@ -37,19 +49,3 @@ class LetMeInCommand(Command):
             print(f"Error sending request: {e}")
             return "An error occurred while attempting to unlock the door."
 
-    def reset_letmein_status(self):
-        """Background thread function to reset letmein status after 8 seconds."""
-        time.sleep(8)
-        try:
-            data_reset = {
-                "status": {
-                    "letmein": False
-                }
-            }
-            reset_response = requests.post("http://dot.cs.wmich.edu:8878", data=json.dumps(data_reset))
-            if reset_response.status_code == 200:
-                print("Door status reset to locked.")
-            else:
-                print("Failed to reset door status.")
-        except Exception as e:
-            print(f"Error resetting status: {e}")
