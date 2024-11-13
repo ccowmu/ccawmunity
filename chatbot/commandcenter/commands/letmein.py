@@ -2,6 +2,7 @@ from ..command import Command
 from ..eventpackage import EventPackage
 import requests
 import json
+import time
 
 class LetMeInCommand(Command):
     def __init__(self):
@@ -27,7 +28,25 @@ class LetMeInCommand(Command):
 
             # Check server response
             if response.status_code == 200:
-                return "Door is unlocking..."
+                result_message = "Door is unlocking..."
+                print(result_message)
+                
+                # Wait for 8 seconds before resetting
+                time.sleep(8)
+
+                # Reset letmein status to False
+                data_reset = {
+                    "status": {
+                        "letmein": False
+                    }
+                }
+                reset_response = requests.post("http://dot.cs.wmich.edu:8878", data=json.dumps(data_reset))
+
+                if reset_response.status_code == 200:
+                    return "Door is now locked again."
+                else:
+                    return "Failed to reset door status."
+
             else:
                 return f"Failed to unlock the door. Server returned status code {response.status_code}."
 
