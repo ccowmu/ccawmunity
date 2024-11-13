@@ -27,7 +27,7 @@ class LetMeInCommand(Command):
 
             if response.status_code == 200:
                 # Wait for 5 seconds before resetting the status
-                time.sleep(5)
+                time.sleep(3)
 
                 # Reset letmein status to False
                 data_reset = {
