@@ -23,7 +23,7 @@ class LetMeInCommand(Command):
                     "letmein": True
                 }
             }
-            response = requests.post("http://cclub.cs.wmich.edu:8878", data=json.dumps(data))
+            response = requests.post("http://dot.cs.wmich.edu:8878", data=json.dumps(data))
 
             # Check server response
             if response.status_code == 200:
