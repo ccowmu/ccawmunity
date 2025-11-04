@@ -4,8 +4,19 @@ services:
     build: .
     env_file: .env
     restart: always
+    networks:
+      - default
+      - containers_ldap
+    depends_on:
+      - redis
+
   redis:
     image: "redis:alpine"
     volumes:
       - /home/sysadmin/ccawmunity/data:/data
+    networks:
+      - default
 
+networks:
+  containers_ldap:
+    external: true
