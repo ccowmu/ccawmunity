@@ -18,14 +18,16 @@ class ExpiryCommand(Command):
         self.whitelist = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin"]
 
         # LDAP config
-        self.LDAP_URL = "ldap://containers-openldap-1:389"
+        default_url = "ldap://openldap:389"
+        self.LDAP_URL = environ.get("LDAP_URL", default_url)
+        self.FALLBACK_URL = "ldap://containers-openldap-1:389"
         self.MEMBER_BASE = "cn=members,dc=yakko,dc=cs,dc=wmich,dc=edu"
         self.POSIX_DAY = 86400
         self.DESIRED_FIELDS = ["shadowExpire"]
         self.ADMIN_FIELDS = ["uid", "cn", "shadowExpire"]
 
-    def _bind(self) -> ldap3.Connection:
-        server = ldap3.Server(self.LDAP_URL, get_info=ldap3.NONE)
+    def _connect(self, url: str) -> ldap3.Connection:
+        server = ldap3.Server(url, get_info=ldap3.NONE)
         return ldap3.Connection(
             server,
             user="cn=readonly,dc=yakko,dc=cs,dc=wmich,dc=edu",
@@ -34,6 +36,14 @@ class ExpiryCommand(Command):
             raise_exceptions=True,
             receive_timeout=5,
         )
+
+    def _bind(self) -> ldap3.Connection:
+        try:
+            return self._connect(self.LDAP_URL)
+        except Exception:
+            if self.FALLBACK_URL and self.FALLBACK_URL != self.LDAP_URL:
+                return self._connect(self.FALLBACK_URL)
+            raise
 
     def _fmt_date(self, days_since_epoch: int) -> str:
         return date.fromtimestamp(int(days_since_epoch) * self.POSIX_DAY).strftime("%Y-%m-%d")
@@ -92,8 +102,10 @@ class ExpiryCommand(Command):
 
         try:
             conn = self._bind()
-        except Exception:
-            return "Failed to bind to LDAP."
+        except Exception as e:
+            # common case: connection refused / DNS / bad bind
+            print("LDAP bind error:", e)
+            return "Failed to bind to LDAP (unreachable or bad creds)."
 
         try:
             if len(args) == 0:
