@@ -13,9 +13,9 @@ class ExpiryCommand(Command):
         super().__init__()
         self.name = "$expiry"
         self.help = "$expiry | Gets a member's expiration date. | Usage: $expiry dolphin | $expiry -a"
-        self.author = "nothingbutflowers, sphinx"
+        self.author = "nothingbutflowers, sphinx, krackentosh"
         self.last_updated = "Nov. 4, 2025"
-        self.whitelist = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin"]
+        self.whitelist = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin", "krackentosh"]
 
         # LDAP config
         default_url = "ldap://openldap:389"
