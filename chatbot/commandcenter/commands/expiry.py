@@ -18,7 +18,7 @@ class ExpiryCommand(Command):
         self.whitelist = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin"]
 
         # LDAP config
-        self.LDAP_URL = "ldap://openldap:389"
+        self.LDAP_URL = "ldap://containers-openldap-1:389"
         self.MEMBER_BASE = "cn=members,dc=yakko,dc=cs,dc=wmich,dc=edu"
         self.POSIX_DAY = 86400
         self.DESIRED_FIELDS = ["shadowExpire"]
