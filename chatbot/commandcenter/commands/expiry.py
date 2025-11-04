@@ -20,7 +20,7 @@ class ExpiryCommand(Command):
 
     def run(self, event_pack: EventPackage):
         # TODO: redo the logic here so code is not repeated, I tried and failed
-        LDAP_URL = 'ldap://yakko.cs.wmich.edu:389'
+        LDAP_URL = 'https://cclub.cs.wmich.edu/ldap/'
         MEMBER_BASE = 'cn=members,dc=yakko,dc=cs,dc=wmich,dc=edu'
         POSIX_DAY = 86400
         DESIRED_FIELDS = ["shadowExpire"]
