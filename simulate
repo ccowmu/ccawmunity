@@ -1,0 +1,12 @@
+#!/bin/bash
+# Convenient wrapper to run the simulator with the correct Python environment
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+
+# Use the venv Python if it exists, otherwise use system python3
+if [ -f "venv/bin/python3" ]; then
+    exec venv/bin/python3 simulator/simulate.py "$@"
+else
+    exec python3 simulator/simulate.py "$@"
+fi
