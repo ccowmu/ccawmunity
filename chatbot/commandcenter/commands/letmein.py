@@ -23,7 +23,6 @@ class LetMeInCommand(Command):
                     "letmein": True
                 }
             }
-            # updated to reflect NewYakko instead of Dot
             response = requests.post("http://newyakko.cs.wmich.edu:8878", data=json.dumps(data))
 
             if response.status_code == 200:
@@ -36,7 +35,7 @@ class LetMeInCommand(Command):
                         "letmein": False
                     }
                 }
-                # updated to reflect NewYakko instead of Dot
+        
                 reset_response = requests.post("http://newyakko.cs.wmich.edu:8878", data=json.dumps(data_reset))
 
                 if reset_response.status_code == 200:
