@@ -1,7 +1,6 @@
 from ..command import Command
 from ..eventpackage import EventPackage
 import requests
-import json
 import time
 
 class LetMeInCommand(Command):
@@ -10,7 +9,7 @@ class LetMeInCommand(Command):
         self.name = "$letmein"
         self.help = "$letmein | Unlocks the door for club members"
         self.author = "Lochlan McElroy"
-        self.last_updated = "February 1st 2026"
+        self.last_updated = "February 2nd 2026"
 
     def run(self, event_pack: EventPackage):
         if len(event_pack.body) < 1:
@@ -23,10 +22,14 @@ class LetMeInCommand(Command):
                     "letmein": True
                 }
             }
-            response = requests.post("http://yakko.cs.wmich.edu:8878", data=json.dumps(data))
+            response = requests.post(
+                "http://yakko.cs.wmich.edu:8878",
+                json=data,
+                timeout=5,
+            )
 
             if response.status_code == 200:
-                # Wait for 5 seconds before resetting the status
+                # Wait briefly before resetting the status
                 time.sleep(3)
 
                 # Reset letmein status to False
@@ -36,7 +39,11 @@ class LetMeInCommand(Command):
                     }
                 }
         
-                reset_response = requests.post("http://yakko.cs.wmich.edu:8878", data=json.dumps(data_reset))
+                reset_response = requests.post(
+                    "http://yakko.cs.wmich.edu:8878",
+                    json=data_reset,
+                    timeout=5,
+                )
 
                 if reset_response.status_code == 200:
                     return "Door unlocked and now locked again."
@@ -44,9 +51,13 @@ class LetMeInCommand(Command):
                     return "Failed to reset door status."
 
             else:
-                return f"Failed to unlock the door. Server returned status code {response.status_code}."
+                body_snip = (response.text or "").strip().replace("\n", " ")
+                if len(body_snip) > 200:
+                    body_snip = body_snip[:200] + "..."
+                return (
+                    "Failed to unlock the door. Server returned status code {}: {}."
+                ).format(response.status_code, body_snip)
 
         except Exception as e:
-            print(f"Error sending request: {e}")
-            return "An error occurred while attempting to unlock the door."
-
+            print("Error sending request: {}".format(e))
+            return "An error occurred while attempting to unlock the door: {}.".format(e)

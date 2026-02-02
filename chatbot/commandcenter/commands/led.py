@@ -2,7 +2,6 @@ from ..command import Command
 from ..eventpackage import EventPackage
 import requests
 import re
-import json
 
 # note: this command only works when run on a machine in same subnet as dot.
 # (this command will work when run on dot.)
@@ -13,7 +12,7 @@ class LedCommand(Command):
         self.name = "$led"
         self.help = "$led | Changes leds in club. e.g. $led #00ff22 {color, chase, rainbow, or random}"
         self.author = "spacedog"
-        self.last_updated = "February 14th 2020"
+        self.last_updated = "February 2nd 2026"
 
     def run(self, event_pack: EventPackage):
         if len(event_pack.body) < 2:
@@ -51,6 +50,18 @@ class LedCommand(Command):
                         }
                         r += " ({})".format(typ)
 
-                requests.post("http://yakko.cs.wmich.edu:8878", data=json.dumps(data))
+                try:
+                    response = requests.post(
+                        "http://yakko.cs.wmich.edu:8878",
+                        json=data,
+                        timeout=5,
+                    )
+                    if response.status_code != 200:
+                        body_snip = (response.text or "").strip().replace("\n", " ")
+                        if len(body_snip) > 200:
+                            body_snip = body_snip[:200] + "..."
+                        r += " (server {}: {})".format(response.status_code, body_snip)
+                except Exception as e:
+                    r += " (request failed: {})".format(e)
 
         return r
