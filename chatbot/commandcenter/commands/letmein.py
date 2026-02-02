@@ -10,7 +10,7 @@ class LetMeInCommand(Command):
         self.name = "$letmein"
         self.help = "$letmein | Unlocks the door for club members"
         self.author = "Lochlan McElroy"
-        self.last_updated = "November 11th 2024"
+        self.last_updated = "February 1st 2026"
 
     def run(self, event_pack: EventPackage):
         if len(event_pack.body) < 1:
@@ -23,7 +23,8 @@ class LetMeInCommand(Command):
                     "letmein": True
                 }
             }
-            response = requests.post("http://dot.cs.wmich.edu:8878", data=json.dumps(data))
+            # updated to reflect NewYakko instead of Dot
+            response = requests.post("http://newyakko.cs.wmich.edu:8878", data=json.dumps(data))
 
             if response.status_code == 200:
                 # Wait for 5 seconds before resetting the status
@@ -35,7 +36,8 @@ class LetMeInCommand(Command):
                         "letmein": False
                     }
                 }
-                reset_response = requests.post("http://dot.cs.wmich.edu:8878", data=json.dumps(data_reset))
+                # updated to reflect NewYakko instead of Dot
+                reset_response = requests.post("http://newyakko.cs.wmich.edu:8878", data=json.dumps(data_reset))
 
                 if reset_response.status_code == 200:
                     return "Door unlocked and now locked again."
