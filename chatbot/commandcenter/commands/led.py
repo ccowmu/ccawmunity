@@ -51,6 +51,6 @@ class LedCommand(Command):
                         }
                         r += " ({})".format(typ)
 
-                requests.post("http://newyakko.cs.wmich.edu:8878", data=json.dumps(data))
+                requests.post("http://yakko.cs.wmich.edu:8878", data=json.dumps(data))
 
         return r
