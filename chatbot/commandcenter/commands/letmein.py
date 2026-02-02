@@ -23,7 +23,7 @@ class LetMeInCommand(Command):
                     "letmein": True
                 }
             }
-            response = requests.post("http://newyakko.cs.wmich.edu:8878", data=json.dumps(data))
+            response = requests.post("http://yakko.cs.wmich.edu:8878", data=json.dumps(data))
 
             if response.status_code == 200:
                 # Wait for 5 seconds before resetting the status
@@ -36,7 +36,7 @@ class LetMeInCommand(Command):
                     }
                 }
         
-                reset_response = requests.post("http://newyakko.cs.wmich.edu:8878", data=json.dumps(data_reset))
+                reset_response = requests.post("http://yakko.cs.wmich.edu:8878", data=json.dumps(data_reset))
 
                 if reset_response.status_code == 200:
                     return "Door unlocked and now locked again."
