@@ -2,6 +2,7 @@ from ..command import Command
 from ..eventpackage import EventPackage
 import requests
 import re
+from os import environ
 
 # note: this command only works when run on a machine in same subnet as dot.
 # (this command will work when run on dot.)
@@ -13,8 +14,13 @@ class LedCommand(Command):
         self.help = "$led | Changes leds in club. e.g. $led #00ff22 {color, chase, rainbow, or random}"
         self.author = "spacedog"
         self.last_updated = "February 2nd 2026"
+        self.yakko_url = environ.get("YAKKO_URL", "")
+        self.yakko_api_key = environ.get("YAKKO_API_KEY", "")
 
     def run(self, event_pack: EventPackage):
+        if not self.yakko_url or not self.yakko_api_key:
+            return "Error: YAKKO_URL or YAKKO_API_KEY environment variable is not set."
+
         if len(event_pack.body) < 2:
             r = "Usage: $led #00ff22 {color, chase, rainbow, or random}"
         else:
@@ -52,8 +58,9 @@ class LedCommand(Command):
 
                 try:
                     response = requests.post(
-                        "http://yakko.cs.wmich.edu:8878",
+                        self.yakko_url,
                         json=data,
+                        headers={"Authorization": "Bearer " + self.yakko_api_key},
                         timeout=5,
                     )
                     if response.status_code != 200:

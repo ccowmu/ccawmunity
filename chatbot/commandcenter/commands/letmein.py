@@ -1,7 +1,7 @@
 from ..command import Command
 from ..eventpackage import EventPackage
 import requests
-import time
+from os import environ
 
 class LetMeInCommand(Command):
     def __init__(self):
@@ -10,10 +10,17 @@ class LetMeInCommand(Command):
         self.help = "$letmein | Unlocks the door for club members"
         self.author = "Lochlan McElroy"
         self.last_updated = "February 2nd 2026"
+        self.yakko_url = environ.get("YAKKO_URL", "")
+        self.yakko_api_key = environ.get("YAKKO_API_KEY", "")
 
     def run(self, event_pack: EventPackage):
+        if not self.yakko_url or not self.yakko_api_key:
+            return "Error: YAKKO_URL or YAKKO_API_KEY environment variable is not set."
+
         if len(event_pack.body) < 1:
             return "Usage: $letmein"
+
+        headers = {"Authorization": "Bearer " + self.yakko_api_key}
 
         try:
             # Send a POST request to unlock the door
@@ -23,32 +30,14 @@ class LetMeInCommand(Command):
                 }
             }
             response = requests.post(
-                "http://yakko.cs.wmich.edu:8878",
+                self.yakko_url,
                 json=data,
+                headers=headers,
                 timeout=5,
             )
 
             if response.status_code == 200:
-                # Wait briefly before resetting the status
-                time.sleep(3)
-
-                # Reset letmein status to False
-                data_reset = {
-                    "status": {
-                        "letmein": False
-                    }
-                }
-        
-                reset_response = requests.post(
-                    "http://yakko.cs.wmich.edu:8878",
-                    json=data_reset,
-                    timeout=5,
-                )
-
-                if reset_response.status_code == 200:
-                    return "Door unlocked and now locked again."
-                else:
-                    return "Failed to reset door status."
+                return "Door unlocked and now locked again."
 
             else:
                 body_snip = (response.text or "").strip().replace("\n", " ")
