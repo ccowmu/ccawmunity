@@ -22,6 +22,19 @@ class LetMeInCommand(Command):
 
         headers = {"Authorization": "Bearer " + self.yakko_api_key}
 
+        # Subcommands (don't unlock)
+        if len(event_pack.body) > 1:
+            sub = event_pack.body[1].lower()
+            if sub == "help":
+                return (
+                    "$letmein            — unlock the door (random sound)\n"
+                    "$letmein <sound>    — unlock and play a specific sound\n"
+                    "$letmein sounds     — list available sounds\n"
+                    "$letmein help       — show this message"
+                )
+            if sub == "sounds":
+                return self.list_sounds(headers)
+
         sound = event_pack.body[1] if len(event_pack.body) > 1 else ""
 
         try:
@@ -54,3 +67,14 @@ class LetMeInCommand(Command):
         except Exception as e:
             print("Error sending request: {}".format(e))
             return "An error occurred while attempting to unlock the door: {}.".format(e)
+
+    def list_sounds(self, headers):
+        try:
+            response = requests.get(self.yakko_url, headers=headers, timeout=5)
+            response.raise_for_status()
+            sounds = response.json().get('sounds', [])
+            if not sounds:
+                return "No sounds available yet (doorbot hasn't synced its list)."
+            return "Available sounds ({}):\n{}".format(len(sounds), "\n".join("  " + s for s in sounds))
+        except Exception as e:
+            return "Error fetching sound list: {}".format(e)
