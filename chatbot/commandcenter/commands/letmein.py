@@ -29,6 +29,7 @@ class LetMeInCommand(Command):
                 return (
                     "$letmein            — unlock the door (random sound)\n"
                     "$letmein <sound>    — unlock and play a specific sound\n"
+                    "$letmein sneaky     — unlock silently (no sound)\n"
                     "$letmein sounds     — list available sounds\n"
                     "$letmein help       — show this message"
                 )
@@ -37,8 +38,12 @@ class LetMeInCommand(Command):
 
         sound = event_pack.body[1] if len(event_pack.body) > 1 else ""
 
-        # Validate sound exists before unlocking
-        if sound:
+        # $letmein sneaky = unlock silently (no sound)
+        if sound.lower() == "sneaky":
+            sound = "none"
+
+        # Validate sound exists before unlocking (skip for "none")
+        if sound and sound != "none":
             try:
                 status = requests.get(self.yakko_url, headers=headers, timeout=5)
                 available = status.json().get('sounds', [])
@@ -62,6 +67,8 @@ class LetMeInCommand(Command):
             )
 
             if response.status_code == 200:
+                if sound == "none":
+                    return "Door unlocked! (sneaky)"
                 if sound:
                     return f"Door unlocked! Playing {sound}"
                 return "Door unlocked!"
