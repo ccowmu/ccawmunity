@@ -7,7 +7,7 @@ class LetMeInCommand(Command):
     def __init__(self):
         super().__init__()
         self.name = "$letmein"
-        self.help = "$letmein | Unlocks the door for club members"
+        self.help = "$letmein [sound.wav] | Unlocks the door. Optionally specify a sound to play."
         self.author = "Lochlan McElroy"
         self.last_updated = "February 2nd 2026"
         self.yakko_url = environ.get("YAKKO_URL", "")
@@ -22,11 +22,13 @@ class LetMeInCommand(Command):
 
         headers = {"Authorization": "Bearer " + self.yakko_api_key}
 
+        sound = event_pack.body[1] if len(event_pack.body) > 1 else ""
+
         try:
-            # Send a POST request to unlock the door
             data = {
                 "status": {
-                    "letmein": True
+                    "letmein": True,
+                    "sound": sound
                 }
             }
             response = requests.post(
@@ -37,7 +39,9 @@ class LetMeInCommand(Command):
             )
 
             if response.status_code == 200:
-                return "Door unlocked and now locked again."
+                if sound:
+                    return f"Door unlocked! Playing {sound}"
+                return "Door unlocked!"
 
             else:
                 body_snip = (response.text or "").strip().replace("\n", " ")
