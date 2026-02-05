@@ -37,6 +37,16 @@ class LetMeInCommand(Command):
 
         sound = event_pack.body[1] if len(event_pack.body) > 1 else ""
 
+        # Validate sound exists before unlocking
+        if sound:
+            try:
+                status = requests.get(self.yakko_url, headers=headers, timeout=5)
+                available = status.json().get('sounds', [])
+                if available and sound not in available:
+                    return "Sound not found: {}. Use $letmein sounds to see available sounds.".format(sound)
+            except Exception:
+                pass  # if we can't check, let it through
+
         try:
             data = {
                 "status": {
