@@ -12,15 +12,12 @@ class ExpiryCommand(Command):
     def __init__(self):
         super().__init__()
         self.name = "$expiry"
-        self.help = (
-            "$expiry | Manage member expiry dates. | "
-            "Usage: $expiry [user] | $expiry -a | "
-            "$expiry -s <user> <YYYY-MM-DD> | "
-            "$expiry -w [list | add <user> | rm <user>]"
-        )
+        self.help = "$expiry | Manage member expiry dates. | $expiry help for usage."
         self.author = "nothingbutflowers, sphinx, krackentosh"
         self.last_updated = "Feb. 18, 2026"
-        self.whitelist = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin", "krackentosh"]
+
+        # who can use admin commands — separate from the dues whitelist
+        self.admins = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin", "krackentosh"]
 
         self.LDAP_URL = environ.get("LDAP_URL", "ldap://openldap:389")
         self.FALLBACK_URL = "ldap://containers-openldap-1:389"
@@ -30,9 +27,7 @@ class ExpiryCommand(Command):
         self.ADMIN_FIELDS = ["uid", "cn", "shadowExpire"]
 
     def _is_admin(self, nick: str) -> bool:
-        if nick == "airbreak" or nick in self.whitelist:
-            return True
-        return any(nick == m.decode() for m in self.db_set_get("admin_whitelist"))
+        return nick == "airbreak" or nick in self.admins
 
     def _connect(self, url: str, write=False) -> ldap3.Connection:
         server = ldap3.Server(url, get_info=ldap3.NONE)
@@ -135,30 +130,57 @@ class ExpiryCommand(Command):
                 pass
         return f"Set {target} expiry to {date_str}."
 
-    def _cmd_whitelist(self, args):
+    def _cmd_dues_whitelist(self, conn, args):
         sub = args[1] if len(args) > 1 else "list"
+
         if sub == "list":
-            base = sorted(set(self.whitelist) | {"airbreak"})
-            extra = sorted(m.decode() for m in self.db_set_get("admin_whitelist"))
-            lines = [f"{u} (base)" for u in base] + [f"{u} (added)" for u in extra]
-            return CommandCodeResponse("\n".join(lines) if lines else "whitelist is empty")
-        if sub in ("add", "rm") and len(args) > 2:
-            user = args[2]
-            if user in self.whitelist or user == "airbreak":
-                return f"{user} is already in the base whitelist."
-            if sub == "add":
-                self.db_set_add("admin_whitelist", user)
-                return f"Added {user} to admin whitelist."
-            else:
-                self.db_set_remove("admin_whitelist", user)
-                return f"Removed {user} from admin whitelist."
+            # members with shadowAccount but no shadowExpire set = dues exempt
+            results = []
+            for entry in conn.extend.standard.paged_search(
+                search_base=self.MEMBER_BASE,
+                search_filter="(&(objectClass=shadowAccount)(!(shadowExpire=*)))",
+                search_scope=ldap3.SUBTREE,
+                attributes=["uid", "cn"],
+                paged_size=200,
+                generator=True,
+            ):
+                if entry.get("type") != "searchResEntry":
+                    continue
+                attrs = entry.get("attributes", {}) or {}
+                uid = attrs.get("uid") or attrs.get("cn") or entry.get("dn") or ""
+                results.append(str(uid))
+            if not results:
+                return "No dues-exempt members found."
+            return CommandCodeResponse("\n".join(sorted(results)))
+
+        if sub == "add" and len(args) > 2:
+            target = args[2]
+            entry = self._find_member(conn, target, ["uid", "shadowExpire"])
+            if not entry:
+                return f"I don't know who {target} is!"
+            wconn = self._bind(write=True)
+            try:
+                wconn.modify(entry.entry_dn, {"shadowExpire": [(ldap3.MODIFY_DELETE, [])]})
+                if wconn.result["result"] != 0:
+                    return f"LDAP modify failed: {wconn.result['description']}"
+            finally:
+                try:
+                    if wconn.bound:
+                        wconn.unbind()
+                except Exception:
+                    pass
+            return f"{target} is now dues-exempt (shadowExpire removed)."
+
+        if sub == "rm" and len(args) > 2:
+            target = args[2]
+            return f"Use $expiry -s {target} <YYYY-MM-DD> to set their expiry date and remove exemption."
+
         return "Usage: $expiry -w [list | add <user> | rm <user>]"
 
     def run(self, event_pack: EventPackage):
         args = event_pack.body[1:]
         nick = event_pack.sender.split(":")[0][1:]
 
-        # whitelist-only commands that don't need LDAP
         if args and args[0] == "help":
             lines = [
                 "$expiry             — check your own expiry date",
@@ -166,18 +188,13 @@ class ExpiryCommand(Command):
             ]
             if self._is_admin(nick):
                 lines += [
-                    "$expiry -a          — list all expired members",
-                    "$expiry -s <user> <YYYY-MM-DD>  — set a member's expiry date",
-                    "$expiry -w list     — show admin whitelist",
-                    "$expiry -w add <user>  — grant admin access",
-                    "$expiry -w rm <user>   — revoke admin access",
+                    "$expiry -a                       — list all expired members",
+                    "$expiry -s <user> <YYYY-MM-DD>   — set a member's expiry date",
+                    "$expiry -w list                  — list dues-exempt members",
+                    "$expiry -w add <user>            — exempt a member from dues",
+                    "$expiry -w rm <user>             — remove dues exemption",
                 ]
             return CommandCodeResponse("\n".join(lines))
-
-        if args and args[0] == "-w":
-            if not self._is_admin(nick):
-                return "You don't have permission to use this command."
-            return self._cmd_whitelist(args)
 
         try:
             conn = self._bind()
@@ -208,6 +225,11 @@ class ExpiryCommand(Command):
                 if not self._is_admin(nick):
                     return "You don't have permission to use this command."
                 return self._cmd_set_expiry(conn, args)
+
+            if args[0] == "-w":
+                if not self._is_admin(nick):
+                    return "You don't have permission to use this command."
+                return self._cmd_dues_whitelist(conn, args)
 
             target = args[0]
             entry = self._find_member(conn, target, self.DESIRED_FIELDS)
