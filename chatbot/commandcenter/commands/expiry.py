@@ -159,6 +159,21 @@ class ExpiryCommand(Command):
         nick = event_pack.sender.split(":")[0][1:]
 
         # whitelist-only commands that don't need LDAP
+        if args and args[0] == "help":
+            lines = [
+                "$expiry             — check your own expiry date",
+                "$expiry <user>      — check someone else's expiry date",
+            ]
+            if self._is_admin(nick):
+                lines += [
+                    "$expiry -a          — list all expired members",
+                    "$expiry -s <user> <YYYY-MM-DD>  — set a member's expiry date",
+                    "$expiry -w list     — show admin whitelist",
+                    "$expiry -w add <user>  — grant admin access",
+                    "$expiry -w rm <user>   — revoke admin access",
+                ]
+            return CommandCodeResponse("\n".join(lines))
+
         if args and args[0] == "-w":
             if not self._is_admin(nick):
                 return "You don't have permission to use this command."
