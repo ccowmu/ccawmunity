@@ -361,9 +361,14 @@ class ExpiryCommand(Command):
                 return "Usage: $expiry -admin add <user>"
             target = args[2]
             # Verify user exists in LDAP
-            entry = self._find_member(conn, target, ["uid", "expiryAdmin"])
+            entry = self._find_member(conn, target, ["uid", "expiryAdmin", "objectClass"])
             if not entry:
                 return f"No member found for '{target}'."
+            # Add auxiliary objectClass if not present
+            if not hasattr(entry, "objectClass") or "expiryAdminAux" not in entry.objectClass.values:
+                err = self._ldap_modify(entry.entry_dn, {"objectClass": [(ldap3.MODIFY_ADD, ["expiryAdminAux"])]})
+                if err:
+                    return err
             # Add expiryAdmin attribute
             err = self._ldap_modify(entry.entry_dn, {"expiryAdmin": [(ldap3.MODIFY_REPLACE, ["TRUE"])]})
             if err:
