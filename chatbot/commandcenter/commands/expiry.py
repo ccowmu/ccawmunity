@@ -150,6 +150,11 @@ class ExpiryCommand(Command):
                 continue
             attrs = entry.get("attributes", {}) or {}
             uid = attrs.get("uid") or attrs.get("cn") or ""
+            # Handle LDAP attribute that might be a list or bytes
+            if isinstance(uid, list):
+                uid = uid[0] if uid else ""
+            if isinstance(uid, bytes):
+                uid = uid.decode()
             if uid:
                 results.append(str(uid))
         return sorted(results)
