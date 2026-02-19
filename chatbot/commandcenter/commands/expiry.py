@@ -18,9 +18,6 @@ class ExpiryCommand(Command):
         self.help = "$expiry | Manage member expiry dates. | Run $expiry help for usage."
         self.author = "nothingbutflowers, sphinx, krackentosh"
         self.last_updated = "Feb. 19, 2026"
-        
-        # TEMPORARILY DISABLED - Under development
-        self.disabled = True
 
         # Hardcoded admins kept as fallback during LDAP transition
         # After migration, these will be stored in LDAP (expiryAdmin attribute)
