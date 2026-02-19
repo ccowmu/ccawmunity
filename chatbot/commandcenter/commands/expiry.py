@@ -153,6 +153,13 @@ class ExpiryCommand(Command):
             if uid:
                 results.append(str(uid))
         return sorted(results)
+    
+    def _ping_free(self, username: str) -> str:
+        """Insert zero-width space to prevent Matrix mentions."""
+        if len(username) <= 1:
+            return username
+        # Insert zero-width space after first character
+        return username[0] + "\u200b" + username[1:]
 
     def _expired_members_paged(self, conn: ldap3.Connection):
         today_days = int(time.time()) // self.POSIX_DAY
@@ -275,7 +282,9 @@ class ExpiryCommand(Command):
                 results.append(str(uid))
             if not results:
                 return "No dues-exempt members."
-            return CommandCodeResponse("\n".join(sorted(results)))
+            # Make usernames ping-free to avoid notifications
+            ping_free_names = [self._ping_free(uid) for uid in sorted(results)]
+            return CommandCodeResponse("\n".join(ping_free_names))
 
         if sub == "add":
             if len(args) < 3:
@@ -322,16 +331,16 @@ class ExpiryCommand(Command):
         lines = ["— $expiry Admin Access —"]
         lines.append("")
         lines.append("Manual admins (via -admin add):")
-        # Always show airbreak first
-        lines.append("  airbreak")
+        # Always show airbreak first (ping-free)
+        lines.append(f"  {self._ping_free('airbreak')}")
         if manual_admins:
             for admin in sorted(manual_admins):
-                lines.append(f"  {admin}")
+                lines.append(f"  {self._ping_free(admin)}")
         lines.append("")
         lines.append("Dues-exempt (auto-admin):")
         if dues_exempt:
             for member in dues_exempt:
-                lines.append(f"  {member}")
+                lines.append(f"  {self._ping_free(member)}")
         else:
             lines.append("  (none)")
         
