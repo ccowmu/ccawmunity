@@ -19,7 +19,9 @@ class ExpiryCommand(Command):
         self.author = "nothingbutflowers, sphinx, krackentosh"
         self.last_updated = "Feb. 19, 2026"
 
-        # who can use admin commands — separate from the dues whitelist
+        # Hardcoded admins kept as fallback during LDAP transition
+        # After migration, these will be stored in LDAP (expiryAdmin attribute)
+        # Bootstrap superadmin "airbreak" is always checked first in _is_admin()
         self.admins = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin", "krackentosh"]
 
         self.LDAP_URL      = environ.get("LDAP_URL", "ldap://openldap:389")
@@ -34,7 +36,44 @@ class ExpiryCommand(Command):
     # ------------------------------------------------------------------ auth
 
     def _is_admin(self, nick: str) -> bool:
-        return nick == "airbreak" or nick in self.admins
+        """
+        Check if user has $expiry admin access.
+        Priority: airbreak (superadmin) > LDAP expiryAdmin attribute > dues-exempt
+        """
+        # 1. airbreak is bootstrap superadmin (always has access)
+        if nick == "airbreak":
+            return True
+        
+        # 2. Check LDAP for explicit admin flag or dues-exempt status
+        conn = None
+        try:
+            conn = self._bind()
+            entry = self._find_member(conn, nick, ["expiryAdmin", "shadowExpire"])
+            if not entry:
+                return False
+            
+            # Check explicit admin attribute (expiryAdmin: TRUE)
+            if hasattr(entry, "expiryAdmin"):
+                val = entry["expiryAdmin"].value
+                if val and str(val).lower() in ["true", "yes", "1"]:
+                    return True
+            
+            # Check if dues-exempt (no shadowExpire = auto-admin)
+            exp = self._get_shadow_expire(entry)
+            if exp is None:  # No shadowExpire attribute = dues-exempt
+                return True
+            
+            return False
+        except Exception as e:
+            print(f"LDAP error in _is_admin: {e}")
+            # Fallback: Check hardcoded list (temporary during migration)
+            return nick in self.admins
+        finally:
+            if conn and conn.bound:
+                try:
+                    conn.unbind()
+                except Exception:
+                    pass
 
     # ------------------------------------------------------------------ ldap
 
@@ -96,6 +135,24 @@ class ExpiryCommand(Command):
             return int(val) if val not in (None, "") else None
         except Exception:
             return None
+
+    def _get_dues_exempt_members(self, conn: ldap3.Connection):
+        """Get list of dues-exempt members (no shadowExpire attribute)."""
+        results = []
+        for entry in conn.extend.standard.paged_search(
+            search_base=self.MEMBER_BASE,
+            search_filter="(&(objectClass=shadowAccount)(!(shadowExpire=*)))",
+            search_scope=ldap3.SUBTREE,
+            attributes=["uid", "cn"],
+            paged_size=200, generator=True,
+        ):
+            if entry.get("type") != "searchResEntry":
+                continue
+            attrs = entry.get("attributes", {}) or {}
+            uid = attrs.get("uid") or attrs.get("cn") or ""
+            if uid:
+                results.append(str(uid))
+        return sorted(results)
 
     def _expired_members_paged(self, conn: ldap3.Connection):
         today_days = int(time.time()) // self.POSIX_DAY
@@ -240,11 +297,107 @@ class ExpiryCommand(Command):
 
         return "Usage: $expiry -w [list | add <user> | rm <user>]"
 
+    def _cmd_admin_list(self, conn, args):
+        """List users with admin access (manual + dues-exempt)."""
+        # Get manual admins (with expiryAdmin attribute)
+        manual_admins = []
+        for entry in conn.extend.standard.paged_search(
+            search_base=self.MEMBER_BASE,
+            search_filter="(&(objectClass=shadowAccount)(expiryAdmin=TRUE))",
+            search_scope=ldap3.SUBTREE,
+            attributes=["uid", "cn"],
+            paged_size=200, generator=True,
+        ):
+            if entry.get("type") != "searchResEntry":
+                continue
+            attrs = entry.get("attributes", {}) or {}
+            uid = attrs.get("uid") or attrs.get("cn") or ""
+            if uid:
+                manual_admins.append(str(uid))
+        
+        # Get dues-exempt members (auto-admin)
+        dues_exempt = self._get_dues_exempt_members(conn)
+        
+        # Build response
+        lines = ["— $expiry Admin Access —"]
+        lines.append("")
+        lines.append("Manual admins (via -admin add):")
+        if manual_admins:
+            for admin in sorted(manual_admins):
+                lines.append(f"  {admin}")
+        else:
+            lines.append("  (none)")
+        lines.append("")
+        lines.append("Dues-exempt (auto-admin):")
+        if dues_exempt:
+            for member in dues_exempt:
+                lines.append(f"  {member}")
+        else:
+            lines.append("  (none)")
+        lines.append("")
+        lines.append("Note: airbreak always has admin access (bootstrap superadmin)")
+        
+        return CommandCodeResponse("\n".join(lines))
+
+    def _cmd_admin_manage(self, conn, args):
+        """Manage admin access list."""
+        if len(args) < 2:
+            return "Usage: $expiry -admin [list | add <user> | rm <user>]"
+        
+        sub = args[1]
+        
+        if sub == "list":
+            return self._cmd_admin_list(conn, args)
+        
+        if sub == "add":
+            if len(args) < 3:
+                return "Usage: $expiry -admin add <user>"
+            target = args[2]
+            # Verify user exists in LDAP
+            entry = self._find_member(conn, target, ["uid", "expiryAdmin"])
+            if not entry:
+                return f"No member found for '{target}'."
+            # Add expiryAdmin attribute
+            err = self._ldap_modify(entry.entry_dn, {"expiryAdmin": [(ldap3.MODIFY_REPLACE, ["TRUE"])]})
+            if err:
+                return err
+            return f"Added {target} to admin list — they now have $expiry admin access."
+        
+        if sub == "rm":
+            if len(args) < 3:
+                return "Usage: $expiry -admin rm <user>"
+            target = args[2]
+            entry = self._find_member(conn, target, ["uid", "expiryAdmin", "shadowExpire"])
+            if not entry:
+                return f"No member found for '{target}'."
+            # Check if they have the attribute
+            if not hasattr(entry, "expiryAdmin"):
+                return f"{target} is not in the manual admin list."
+            # Remove expiryAdmin attribute
+            err = self._ldap_modify(entry.entry_dn, {"expiryAdmin": [(ldap3.MODIFY_DELETE, [])]})
+            if err:
+                return err
+            # Check if still admin via dues-exempt
+            exp = self._get_shadow_expire(entry)
+            if exp is None:
+                return f"Removed {target} from admin list. (Still has access: dues-exempt)"
+            return f"Removed {target} from admin list — no longer has $expiry admin access."
+        
+        return "Usage: $expiry -admin [list | add <user> | rm <user>]"
+
     # ------------------------------------------------------------------ run
 
     def run(self, event_pack: EventPackage):
         args = event_pack.body[1:]
-        nick = event_pack.sender.split(":")[0][1:]
+        sender = event_pack.sender
+        nick = sender.split(":")[0][1:]
+        
+        # Bot Protection: Block bot accounts from using this command (defense in depth).
+        # Framework (chat.py) already blocks these via botconfig.ignored, but we add
+        # an explicit check here for security-sensitive operations.
+        BOT_ACCOUNTS = ["rustix", "ccawmu", "fish", "scoob"]
+        if nick.lower() in [b.lower() for b in BOT_ACCOUNTS]:
+            return  # Silent ignore, consistent with framework behavior
 
         if args and args[0] == "help":
             lines = [
@@ -260,9 +413,14 @@ class ExpiryCommand(Command):
                     "$expiry -r <user>                — unsuspend a member's chat access",
                     "$expiry -d <user>                — suspend a member's chat access (soft ban)",
                     "",
+                    "— admin access —",
+                    "$expiry -admin list              — show who has admin access",
+                    "$expiry -admin add <user>        — grant admin access (LDAP-backed)",
+                    "$expiry -admin rm <user>         — revoke admin access",
+                    "",
                     "— dues whitelist —",
                     "$expiry -w list                  — list dues-exempt members",
-                    "$expiry -w add <user>            — exempt a member from dues",
+                    "$expiry -w add <user>            — exempt from dues (auto-grants admin)",
                     "$expiry -w rm <user>             — remove dues exemption",
                 ]
             return CommandCodeResponse("\n".join(lines))
@@ -280,6 +438,7 @@ class ExpiryCommand(Command):
                 "-r": self._cmd_unsuspend,
                 "-d": self._cmd_suspend,
                 "-w": self._cmd_dues_whitelist,
+                "-admin": self._cmd_admin_manage,
             }
 
             if args and args[0] in ADMIN_CMDS:
