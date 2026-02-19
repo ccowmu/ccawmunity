@@ -190,9 +190,9 @@ class ExpiryCommand(Command):
         if not self.SYNAPSE_TOKEN:
             return "SYNAPSE_ADMIN_TOKEN not set."
         user_id = requests.utils.quote(f"@{uid}:{MATRIX_DOMAIN}")
-        url = f"{self.SYNAPSE_URL}/_synapse/admin/v1/suspend/{user_id}"
+        url = f"{self.SYNAPSE_URL}/_synapse/admin/v2/users/{user_id}"
         try:
-            r = requests.put(url, json={"suspend": True},
+            r = requests.put(url, json={"shadow_banned": True},
                              headers=self._synapse_headers(), timeout=10)
             return None if r.status_code == 200 else f"Synapse error {r.status_code}: {r.text}"
         except requests.RequestException as e:
@@ -202,9 +202,9 @@ class ExpiryCommand(Command):
         if not self.SYNAPSE_TOKEN:
             return "SYNAPSE_ADMIN_TOKEN not set."
         user_id = requests.utils.quote(f"@{uid}:{MATRIX_DOMAIN}")
-        url = f"{self.SYNAPSE_URL}/_synapse/admin/v1/suspend/{user_id}"
+        url = f"{self.SYNAPSE_URL}/_synapse/admin/v2/users/{user_id}"
         try:
-            r = requests.put(url, json={"suspend": False},
+            r = requests.put(url, json={"shadow_banned": False},
                              headers=self._synapse_headers(), timeout=10)
             return None if r.status_code == 200 else f"Synapse error {r.status_code}: {r.text}"
         except requests.RequestException as e:
@@ -320,8 +320,8 @@ class ExpiryCommand(Command):
                     "",
                     "━━ Officer Commands ━━",
                     "$expiry -set [user] [YYYY-MM-DD] - Set expiry date",
-                    "$expiry -suspend [user] - Suspend chat access",
-                    "$expiry -unsuspend [user] - Restore chat access",
+                    "$expiry -suspend [user] - Shadow ban user (soft ban)",
+                    "$expiry -unsuspend [user] - Remove shadow ban",
                     "$expiry -expired - List expired members",
                     "",
                     "━━ Lifetime Membership ━━",
