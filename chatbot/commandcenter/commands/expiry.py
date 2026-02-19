@@ -267,23 +267,12 @@ class ExpiryCommand(Command):
         sub = args[1] if len(args) > 1 else "list"
 
         if sub == "list":
-            results = []
-            for entry in conn.extend.standard.paged_search(
-                search_base=self.MEMBER_BASE,
-                search_filter="(&(objectClass=shadowAccount)(!(shadowExpire=*)))",
-                search_scope=ldap3.SUBTREE,
-                attributes=["uid", "cn"],
-                paged_size=200, generator=True,
-            ):
-                if entry.get("type") != "searchResEntry":
-                    continue
-                attrs = entry.get("attributes", {}) or {}
-                uid = attrs.get("uid") or attrs.get("cn") or entry.get("dn") or ""
-                results.append(str(uid))
+            # Get dues-exempt members using the helper function
+            results = self._get_dues_exempt_members(conn)
             if not results:
                 return "No dues-exempt members."
             # Make usernames ping-free to avoid notifications
-            ping_free_names = [self._ping_free(uid) for uid in sorted(results)]
+            ping_free_names = [self._ping_free(uid) for uid in results]
             return CommandCodeResponse("\n".join(ping_free_names))
 
         if sub == "add":
