@@ -32,14 +32,9 @@ class ExpiryCommand(Command):
     # ------------------------------------------------------------------ auth
 
     def _is_officer(self, nick: str) -> bool:
-        """
-        Check if user is an officer (has access to officer commands).
-        """
         conn = None
         try:
             conn = self._bind()
-            
-            # Check if user is in officers group
             conn.search(
                 "cn=officers,dc=yakko,dc=cs,dc=wmich,dc=edu",
                 "(objectClass=posixGroup)",
@@ -51,7 +46,6 @@ class ExpiryCommand(Command):
                     members = officers_group.memberUid.values
                     if nick in members:
                         return True
-            
             return False
         except Exception as e:
             print(f"LDAP error in _is_officer: {e}")
@@ -87,7 +81,6 @@ class ExpiryCommand(Command):
             raise
 
     def _ldap_modify(self, dn: str, changes: dict):
-        """Open a write connection, apply changes, unbind. Returns None on success, error string on failure."""
         wconn = self._bind(write=True)
         try:
             wconn.modify(dn, changes)
@@ -125,7 +118,6 @@ class ExpiryCommand(Command):
             return None
 
     def _get_lifetime_members(self, conn: ldap3.Connection):
-        """Get list of lifetime members (no shadowExpire attribute)."""
         results = []
         for entry in conn.extend.standard.paged_search(
             search_base=self.MEMBER_BASE,
@@ -138,7 +130,6 @@ class ExpiryCommand(Command):
                 continue
             attrs = entry.get("attributes", {}) or {}
             uid = attrs.get("uid") or attrs.get("cn") or ""
-            # Handle LDAP attribute that might be a list or bytes
             if isinstance(uid, list):
                 uid = uid[0] if uid else ""
             if isinstance(uid, bytes):
@@ -148,14 +139,11 @@ class ExpiryCommand(Command):
         return sorted(results)
     
     def _ping_free(self, username: str) -> str:
-        """Replace a character with lookalike to prevent Matrix mentions."""
         if not username:
             return username
-        # Replace common letters with Unicode lookalikes
-        replacements = {'a': 'а', 'e': 'е', 'o': 'о', 'c': 'с', 'p': 'р'}  # Cyrillic lookalikes
+        replacements = {'a': 'а', 'e': 'е', 'o': 'о', 'c': 'с', 'p': 'р'}
         for ascii_char, cyrillic_char in replacements.items():
             if ascii_char in username.lower():
-                # Replace first occurrence (case-insensitive)
                 idx = username.lower().index(ascii_char)
                 return username[:idx] + cyrillic_char + username[idx+1:]
         return username
@@ -263,15 +251,12 @@ class ExpiryCommand(Command):
         return f"Suspended @{uid} — chat access blocked (stays in rooms, settings preserved)."
 
     def _cmd_lifetime(self, conn, args):
-        """Manage lifetime membership (no expiry, no dues)."""
         sub = args[1] if len(args) > 1 else "list"
 
         if sub == "list":
-            # Get lifetime members using the helper function
             results = self._get_lifetime_members(conn)
             if not results:
                 return "No lifetime members."
-            # Make usernames ping-free to avoid notifications
             ping_free_names = [self._ping_free(uid) for uid in results]
             return CommandCodeResponse("\n".join(ping_free_names))
 
@@ -302,12 +287,9 @@ class ExpiryCommand(Command):
         sender = event_pack.sender
         nick = sender.split(":")[0][1:]
         
-        # Bot Protection: Block bot accounts from using this command (defense in depth).
-        # Framework (chat.py) already blocks these via botconfig.ignored, but we add
-        # an explicit check here for security-sensitive operations.
         BOT_ACCOUNTS = ["rustix", "ccawmu", "fish", "scoob"]
         if nick.lower() in [b.lower() for b in BOT_ACCOUNTS]:
-            return  # Silent ignore, consistent with framework behavior
+            return
 
         if args and args[0] == "help":
             is_officer = self._is_officer(nick)
@@ -351,8 +333,6 @@ class ExpiryCommand(Command):
                     return "⛔ Officer access required."
                 return OFFICER_CMDS[args[0]](conn, args)
 
-
-            # show expiry for caller (no args) or named user
             target = args[0] if args else nick
             entry = self._find_member(conn, target, self.DESIRED_FIELDS)
             if not entry:
