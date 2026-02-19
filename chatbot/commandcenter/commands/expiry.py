@@ -322,11 +322,11 @@ class ExpiryCommand(Command):
         lines = ["— $expiry Admin Access —"]
         lines.append("")
         lines.append("Manual admins (via -admin add):")
+        # Always show airbreak first
+        lines.append("  airbreak")
         if manual_admins:
             for admin in sorted(manual_admins):
                 lines.append(f"  {admin}")
-        else:
-            lines.append("  (none)")
         lines.append("")
         lines.append("Dues-exempt (auto-admin):")
         if dues_exempt:
@@ -334,8 +334,6 @@ class ExpiryCommand(Command):
                 lines.append(f"  {member}")
         else:
             lines.append("  (none)")
-        lines.append("")
-        lines.append("Note: airbreak always has admin access (bootstrap superadmin)")
         
         return CommandCodeResponse("\n".join(lines))
 
