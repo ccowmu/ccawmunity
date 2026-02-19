@@ -313,21 +313,21 @@ class ExpiryCommand(Command):
             is_officer = self._is_officer(nick)
             lines = [
                 "$expiry - View your expiry date",
-                "$expiry <user> - View someone's expiry date",
+                "$expiry [user] - View someone's expiry date",
             ]
             if is_officer:
                 lines += [
                     "",
                     "━━ Officer Commands ━━",
-                    "$expiry -set <user> <YYYY-MM-DD> - Set expiry date",
-                    "$expiry -suspend <user> - Suspend chat access",
-                    "$expiry -unsuspend <user> - Restore chat access",
+                    "$expiry -set [user] [YYYY-MM-DD] - Set expiry date",
+                    "$expiry -suspend [user] - Suspend chat access",
+                    "$expiry -unsuspend [user] - Restore chat access",
                     "$expiry -expired - List expired members",
                     "",
                     "━━ Lifetime Membership ━━",
                     "$expiry -lifetime list - List lifetime members",
-                    "$expiry -lifetime add <user> - Grant lifetime membership",
-                    "$expiry -lifetime rm <user> - Remove lifetime membership",
+                    "$expiry -lifetime add [user] - Grant lifetime membership",
+                    "$expiry -lifetime rm [user] - Remove lifetime membership",
                 ]
             return CommandCodeResponse("\n".join(lines))
 
