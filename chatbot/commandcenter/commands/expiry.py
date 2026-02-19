@@ -17,7 +17,7 @@ class ExpiryCommand(Command):
         self.name = "$expiry"
         self.help = "$expiry | Manage member expiry dates. | Run $expiry help for usage."
         self.author = "nothingbutflowers, sphinx, krackentosh"
-        self.last_updated = "Feb. 18, 2026"
+        self.last_updated = "Feb. 19, 2026"
 
         # who can use admin commands — separate from the dues whitelist
         self.admins = ["crosstangent", "kahrl", "sphinx", "rezenee", "estlin", "krackentosh"]
@@ -123,25 +123,25 @@ class ExpiryCommand(Command):
     def _synapse_headers(self):
         return {"Authorization": f"Bearer {self.SYNAPSE_TOKEN}"}
 
-    def _synapse_deactivate(self, uid: str) -> str:
+    def _synapse_suspend(self, uid: str) -> str:
         if not self.SYNAPSE_TOKEN:
             return "SYNAPSE_ADMIN_TOKEN not set."
         user_id = requests.utils.quote(f"@{uid}:{MATRIX_DOMAIN}")
-        url = f"{self.SYNAPSE_URL}/_synapse/admin/v1/deactivate/{user_id}"
+        url = f"{self.SYNAPSE_URL}/_synapse/admin/v1/suspend/{user_id}"
         try:
-            r = requests.post(url, json={"erase": False},
-                              headers=self._synapse_headers(), timeout=10)
+            r = requests.put(url, json={"suspend": True},
+                             headers=self._synapse_headers(), timeout=10)
             return None if r.status_code == 200 else f"Synapse error {r.status_code}: {r.text}"
         except requests.RequestException as e:
             return f"Synapse unreachable: {e}"
 
-    def _synapse_reactivate(self, uid: str) -> str:
+    def _synapse_unsuspend(self, uid: str) -> str:
         if not self.SYNAPSE_TOKEN:
             return "SYNAPSE_ADMIN_TOKEN not set."
         user_id = requests.utils.quote(f"@{uid}:{MATRIX_DOMAIN}")
-        url = f"{self.SYNAPSE_URL}/_synapse/admin/v2/users/{user_id}"
+        url = f"{self.SYNAPSE_URL}/_synapse/admin/v1/suspend/{user_id}"
         try:
-            r = requests.put(url, json={"deactivated": False},
+            r = requests.put(url, json={"suspend": False},
                              headers=self._synapse_headers(), timeout=10)
             return None if r.status_code == 200 else f"Synapse error {r.status_code}: {r.text}"
         except requests.RequestException as e:
@@ -173,29 +173,20 @@ class ExpiryCommand(Command):
             return err
         return f"Set {target} expiry to {date_str}."
 
-    def _cmd_reactivate(self, conn, args):
+    def _cmd_unsuspend(self, conn, args):
         if len(args) < 2:
             return "Usage: $expiry -r <user>"
         target = args[1]
-        entry = self._find_member(conn, target, ["uid", "shadowExpire"])
+        entry = self._find_member(conn, target, ["uid"])
         if not entry:
             return f"No member found for '{target}'."
         uid = str(entry["uid"].value)
-        exp = self._get_shadow_expire(entry)
-        if exp is not None:
-            exp_date = self._fmt_date(exp)
-            today_days = int(time.time()) // self.POSIX_DAY
-            if exp <= today_days:
-                return (
-                    f"@{uid} is still expired ({exp_date}). "
-                    f"Set a new expiry date first: $expiry -s {target} <YYYY-MM-DD>"
-                )
-        err = self._synapse_reactivate(uid)
+        err = self._synapse_unsuspend(uid)
         if err:
             return err
-        return f"Reactivated @{uid} — they can log in again."
+        return f"Unsuspended @{uid} — they can now send messages and use chat."
 
-    def _cmd_deactivate(self, conn, args):
+    def _cmd_suspend(self, conn, args):
         if len(args) < 2:
             return "Usage: $expiry -d <user>"
         target = args[1]
@@ -203,10 +194,10 @@ class ExpiryCommand(Command):
         if not entry:
             return f"No member found for '{target}'."
         uid = str(entry["uid"].value)
-        err = self._synapse_deactivate(uid)
+        err = self._synapse_suspend(uid)
         if err:
             return err
-        return f"Deactivated @{uid} — kicked from all rooms and sessions invalidated."
+        return f"Suspended @{uid} — chat access blocked (stays in rooms, settings preserved)."
 
     def _cmd_dues_whitelist(self, conn, args):
         sub = args[1] if len(args) > 1 else "list"
@@ -266,8 +257,8 @@ class ExpiryCommand(Command):
                     "— admin —",
                     "$expiry -a                       — list all expired members",
                     "$expiry -s <user> <YYYY-MM-DD>   — set a member's expiry date",
-                    "$expiry -r <user>                — reactivate a member's Matrix account",
-                    "$expiry -d <user>                — deactivate a member's Matrix account",
+                    "$expiry -r <user>                — unsuspend a member's chat access",
+                    "$expiry -d <user>                — suspend a member's chat access (soft ban)",
                     "",
                     "— dues whitelist —",
                     "$expiry -w list                  — list dues-exempt members",
@@ -286,8 +277,8 @@ class ExpiryCommand(Command):
             ADMIN_CMDS = {
                 "-a": self._cmd_all_expired,
                 "-s": self._cmd_set_expiry,
-                "-r": self._cmd_reactivate,
-                "-d": self._cmd_deactivate,
+                "-r": self._cmd_unsuspend,
+                "-d": self._cmd_suspend,
                 "-w": self._cmd_dues_whitelist,
             }
 
