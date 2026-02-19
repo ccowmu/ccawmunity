@@ -160,11 +160,8 @@ class ExpiryCommand(Command):
         return sorted(results)
     
     def _ping_free(self, username: str) -> str:
-        """Insert zero-width space to prevent Matrix mentions."""
-        if len(username) <= 1:
-            return username
-        # Insert zero-width space after first character
-        return username[0] + "\u200b" + username[1:]
+        """Wrap username in backticks to prevent Matrix mentions."""
+        return f"`{username}`"
 
     def _expired_members_paged(self, conn: ldap3.Connection):
         today_days = int(time.time()) // self.POSIX_DAY
