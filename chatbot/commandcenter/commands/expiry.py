@@ -38,30 +38,36 @@ class ExpiryCommand(Command):
     def _is_admin(self, nick: str) -> bool:
         """
         Check if user has $expiry admin access.
-        Priority: airbreak (superadmin) > LDAP expiryAdmin attribute > dues-exempt
+        Priority: airbreak (superadmin) > officers group > dues-exempt
         """
         # 1. airbreak is bootstrap superadmin (always has access)
         if nick == "airbreak":
             return True
         
-        # 2. Check LDAP for explicit admin flag or dues-exempt status
+        # 2. Check LDAP for officers group membership or dues-exempt status
         conn = None
         try:
             conn = self._bind()
-            entry = self._find_member(conn, nick, ["expiryAdmin", "shadowExpire"])
-            if not entry:
-                return False
             
-            # Check explicit admin attribute (expiryAdmin: TRUE)
-            if hasattr(entry, "expiryAdmin"):
-                val = entry["expiryAdmin"].value
-                if val and str(val).lower() in ["true", "yes", "1"]:
-                    return True
+            # Check if user is in officers group
+            conn.search(
+                "cn=officers,dc=yakko,dc=cs,dc=wmich,dc=edu",
+                "(objectClass=posixGroup)",
+                attributes=["memberUid"]
+            )
+            if conn.entries:
+                officers_group = conn.entries[0]
+                if hasattr(officers_group, "memberUid"):
+                    members = officers_group.memberUid.values
+                    if nick in members:
+                        return True
             
             # Check if dues-exempt (no shadowExpire = auto-admin)
-            exp = self._get_shadow_expire(entry)
-            if exp is None:  # No shadowExpire attribute = dues-exempt
-                return True
+            entry = self._find_member(conn, nick, ["shadowExpire"])
+            if entry:
+                exp = self._get_shadow_expire(entry)
+                if exp is None:  # No shadowExpire attribute = dues-exempt
+                    return True
             
             return False
         except Exception as e:
@@ -307,22 +313,18 @@ class ExpiryCommand(Command):
         return "Usage: $expiry -w [list | add <user> | rm <user>]"
 
     def _cmd_admin_list(self, conn, args):
-        """List users with admin access (manual + dues-exempt)."""
-        # Get manual admins (with expiryAdmin attribute)
-        manual_admins = []
-        for entry in conn.extend.standard.paged_search(
-            search_base=self.MEMBER_BASE,
-            search_filter="(&(objectClass=shadowAccount)(expiryAdmin=TRUE))",
-            search_scope=ldap3.SUBTREE,
-            attributes=["uid", "cn"],
-            paged_size=200, generator=True,
-        ):
-            if entry.get("type") != "searchResEntry":
-                continue
-            attrs = entry.get("attributes", {}) or {}
-            uid = attrs.get("uid") or attrs.get("cn") or ""
-            if uid:
-                manual_admins.append(str(uid))
+        """List users with admin access (officers group + dues-exempt)."""
+        # Get officers group members
+        officers = []
+        conn.search(
+            "cn=officers,dc=yakko,dc=cs,dc=wmich,dc=edu",
+            "(objectClass=posixGroup)",
+            attributes=["memberUid"]
+        )
+        if conn.entries:
+            officers_group = conn.entries[0]
+            if hasattr(officers_group, "memberUid"):
+                officers = sorted(officers_group.memberUid.values)
         
         # Get dues-exempt members (auto-admin)
         dues_exempt = self._get_dues_exempt_members(conn)
@@ -330,12 +332,12 @@ class ExpiryCommand(Command):
         # Build response
         lines = ["— $expiry Admin Access —"]
         lines.append("")
-        lines.append("Manual admins (via -admin add):")
-        # Always show airbreak first (ping-free)
-        lines.append(f"  {self._ping_free('airbreak')}")
-        if manual_admins:
-            for admin in sorted(manual_admins):
-                lines.append(f"  {self._ping_free(admin)}")
+        lines.append("Officers (via LDAP group):")
+        if officers:
+            for officer in officers:
+                lines.append(f"  {self._ping_free(officer)}")
+        else:
+            lines.append("  (none)")
         lines.append("")
         lines.append("Dues-exempt (auto-admin):")
         if dues_exempt:
@@ -361,39 +363,41 @@ class ExpiryCommand(Command):
                 return "Usage: $expiry -admin add <user>"
             target = args[2]
             # Verify user exists in LDAP
-            entry = self._find_member(conn, target, ["uid", "expiryAdmin", "objectClass"])
+            entry = self._find_member(conn, target, ["uid"])
             if not entry:
                 return f"No member found for '{target}'."
-            # Add auxiliary objectClass if not present
-            if not hasattr(entry, "objectClass") or "expiryAdminAux" not in entry.objectClass.values:
-                err = self._ldap_modify(entry.entry_dn, {"objectClass": [(ldap3.MODIFY_ADD, ["expiryAdminAux"])]})
-                if err:
-                    return err
-            # Add expiryAdmin attribute
-            err = self._ldap_modify(entry.entry_dn, {"expiryAdmin": [(ldap3.MODIFY_REPLACE, ["TRUE"])]})
+            
+            # Add user to officers group
+            group_dn = "cn=officers,dc=yakko,dc=cs,dc=wmich,dc=edu"
+            err = self._ldap_modify(group_dn, {"memberUid": [(ldap3.MODIFY_ADD, [target])]})
             if err:
+                if "Type or value exists" in err:
+                    return f"{target} is already in the officers group."
                 return err
-            return f"Added {target} to admin list — they now have $expiry admin access (still must pay dues)."
+            return f"Added {target} to officers group — they now have $expiry admin access (still must pay dues)."
         
         if sub == "rm":
             if len(args) < 3:
                 return "Usage: $expiry -admin rm <user>"
             target = args[2]
-            entry = self._find_member(conn, target, ["uid", "expiryAdmin", "shadowExpire"])
+            # Verify user exists in LDAP
+            entry = self._find_member(conn, target, ["uid", "shadowExpire"])
             if not entry:
                 return f"No member found for '{target}'."
-            # Check if they have the attribute
-            if not hasattr(entry, "expiryAdmin"):
-                return f"{target} is not in the manual admin list."
-            # Remove expiryAdmin attribute
-            err = self._ldap_modify(entry.entry_dn, {"expiryAdmin": [(ldap3.MODIFY_DELETE, [])]})
+            
+            # Remove user from officers group
+            group_dn = "cn=officers,dc=yakko,dc=cs,dc=wmich,dc=edu"
+            err = self._ldap_modify(group_dn, {"memberUid": [(ldap3.MODIFY_DELETE, [target])]})
             if err:
+                if "No such attribute" in err:
+                    return f"{target} is not in the officers group."
                 return err
+            
             # Check if still admin via dues-exempt
             exp = self._get_shadow_expire(entry)
             if exp is None:
-                return f"Removed {target} from admin list. (Still has access: dues-exempt)"
-            return f"Removed {target} from admin list — no longer has $expiry admin access."
+                return f"Removed {target} from officers group. (Still has access: dues-exempt)"
+            return f"Removed {target} from officers group — no longer has $expiry admin access."
         
         return "Usage: $expiry -admin [list | add <user> | rm <user>]"
 
