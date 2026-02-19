@@ -349,48 +349,16 @@ class ExpiryCommand(Command):
     def _cmd_admin_manage(self, conn, args):
         """Manage admin access list."""
         if len(args) < 2:
-            return "Usage: $expiry -admin [list | add <user> | rm <user>]"
+            return "Usage: $expiry -admin list"
         
         sub = args[1]
         
         if sub == "list":
             return self._cmd_admin_list(conn, args)
         
-        if sub == "add":
-            if len(args) < 3:
-                return "Usage: $expiry -admin add <user>"
-            target = args[2]
-            # Verify user exists in LDAP
-            entry = self._find_member(conn, target, ["uid", "expiryAdmin"])
-            if not entry:
-                return f"No member found for '{target}'."
-            # Add expiryAdmin attribute
-            err = self._ldap_modify(entry.entry_dn, {"expiryAdmin": [(ldap3.MODIFY_REPLACE, ["TRUE"])]})
-            if err:
-                return err
-            return f"Added {target} to admin list — they now have $expiry admin access."
-        
-        if sub == "rm":
-            if len(args) < 3:
-                return "Usage: $expiry -admin rm <user>"
-            target = args[2]
-            entry = self._find_member(conn, target, ["uid", "expiryAdmin", "shadowExpire"])
-            if not entry:
-                return f"No member found for '{target}'."
-            # Check if they have the attribute
-            if not hasattr(entry, "expiryAdmin"):
-                return f"{target} is not in the manual admin list."
-            # Remove expiryAdmin attribute
-            err = self._ldap_modify(entry.entry_dn, {"expiryAdmin": [(ldap3.MODIFY_DELETE, [])]})
-            if err:
-                return err
-            # Check if still admin via dues-exempt
-            exp = self._get_shadow_expire(entry)
-            if exp is None:
-                return f"Removed {target} from admin list. (Still has access: dues-exempt)"
-            return f"Removed {target} from admin list — no longer has $expiry admin access."
-        
-        return "Usage: $expiry -admin [list | add <user> | rm <user>]"
+        # Admin add/rm disabled - requires LDAP schema changes
+        # Use $expiry -w add/rm to grant admin access via dues exemption
+        return "Only 'list' is supported. Use '$expiry -w add <user>' to grant admin access via dues exemption."
 
     # ------------------------------------------------------------------ run
 
@@ -422,8 +390,6 @@ class ExpiryCommand(Command):
                     "",
                     "— admin access —",
                     "$expiry -admin list              — show who has admin access",
-                    "$expiry -admin add <user>        — grant admin access (LDAP-backed)",
-                    "$expiry -admin rm <user>         — revoke admin access",
                     "",
                     "— dues whitelist —",
                     "$expiry -w list                  — list dues-exempt members",
