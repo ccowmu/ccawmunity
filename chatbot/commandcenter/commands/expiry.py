@@ -160,8 +160,17 @@ class ExpiryCommand(Command):
         return sorted(results)
     
     def _ping_free(self, username: str) -> str:
-        """Wrap username in backticks to prevent Matrix mentions."""
-        return f"`{username}`"
+        """Replace a character with lookalike to prevent Matrix mentions."""
+        if not username:
+            return username
+        # Replace common letters with Unicode lookalikes
+        replacements = {'a': 'а', 'e': 'е', 'o': 'о', 'c': 'с', 'p': 'р'}  # Cyrillic lookalikes
+        for ascii_char, cyrillic_char in replacements.items():
+            if ascii_char in username.lower():
+                # Replace first occurrence (case-insensitive)
+                idx = username.lower().index(ascii_char)
+                return username[:idx] + cyrillic_char + username[idx+1:]
+        return username
 
     def _expired_members_paged(self, conn: ldap3.Connection):
         today_days = int(time.time()) // self.POSIX_DAY
