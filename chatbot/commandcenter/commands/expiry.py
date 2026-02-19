@@ -312,8 +312,8 @@ class ExpiryCommand(Command):
         if args and args[0] == "help":
             is_officer = self._is_officer(nick)
             lines = [
-                "$expiry           — View your expiry date",
-                "$expiry <user>    — View someone's expiry date",
+                "$expiry            — View your expiry date",
+                "$expiry <user>     — View someone's expiry date",
             ]
             if is_officer:
                 lines += [
