@@ -7,3 +7,5 @@ env.sh
 .env
 ccaw/
 venv/
+.DS_Store
+*-implement-the-following-plan.txt
