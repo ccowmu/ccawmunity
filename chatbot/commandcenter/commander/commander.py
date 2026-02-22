@@ -117,7 +117,7 @@ class Commander:
 
                 return recv_end.recv()
             else:
-                return self.command_not_recognized()
+                return None
         else:
             # not a command, pass on to nosy commands
             for name, command in self.commands.items():
