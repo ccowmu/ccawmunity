@@ -2,8 +2,7 @@ from ..command import Command
 from ..eventpackage import EventPackage
 import requests
 
-# note: this command only works when run on a machine in same subnet as 141.218.118.171.
-# (this command will work when run on dot.)
+# Talks to the office-presence container (same Docker compose network as the bot).
 
 class OfficeCommand(Command):
     def __init__(self):
