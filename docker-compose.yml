@@ -23,7 +23,7 @@ services:
     build: /home/sysadmin/office-presence
     restart: always
     volumes:
-      - /tmp/morgana-dhcp.leases:/app/dhcpd.leases:ro
+      - /tmp/morgana-dhcp.leases:/app/dhcp4.leases:ro
       - office-data:/app/data
     networks:
       - default
