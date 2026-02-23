@@ -13,6 +13,9 @@ ignored = [
     "@fish:cclub.cs.wmich.edu"
 ]
 
+# Commands handled by other bots — silently ignored here
+ignored_commands = {"$expiry"}
+
 ROOM_ID_GEEKS = "!pYoawuzxaFxYhOVtjN:cclub.cs.wmich.edu"
 ROOM_ID_BOTTOY = "!xrWBUUXQVKbWIuvMDi:cclub.cs.wmich.edu"
 

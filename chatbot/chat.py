@@ -205,6 +205,10 @@ async def on_message(room: MatrixRoom, event: RoomMessageText):
             room.room_id, True, timeout=(botconfig.command_timeout * 1000)
         )
 
+    # silently ignore commands handled by other bots
+    if command_string in botconfig.ignored_commands:
+        return
+
     # run command
     result = g_commander.run_command(command_string, event_package)
 
