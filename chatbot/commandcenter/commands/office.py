@@ -12,7 +12,7 @@ class OfficeCommand(Command):
         self.help = "$office | Lists people connected to CClub network | Usage: $office, register: $office -r <mac>, deregister: $office -d <mac>, list your macs: $office -l"
         self.author = "hellbacon and spacedog"
         self.last_updated = "August 7th 2019"
-        self.base_url = "http://141.218.117.122:5001"
+        self.base_url = "http://office-presence:5001"
     
     def query(self, endpoint, data=None):
         endpoint = endpoint.lstrip("/")

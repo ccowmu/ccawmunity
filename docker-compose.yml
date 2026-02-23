@@ -19,6 +19,18 @@ services:
     networks:
       - default
 
+  office-presence:
+    build: /home/sysadmin/office-presence
+    restart: always
+    volumes:
+      - /tmp/morgana-arp.txt:/app/arp.txt:ro
+      - office-data:/app/data
+    networks:
+      - default
+
+volumes:
+  office-data:
+
 networks:
   ldap:
     external: true
