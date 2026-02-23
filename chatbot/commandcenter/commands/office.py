@@ -7,7 +7,7 @@ import requests
 HELP_TEXT = """\
 $office — shows who is physically in the CClub office (opt-in only).
 Presence is tracked via DHCP leases on the morgana network (192.168.1.0/24).
-Only registered devices are shown by name; others appear as an unregistered count.
+Only registered devices are shown. Register yours to appear in the list.
 
 Commands:
   $office              show who's in the office and how long they've been there
