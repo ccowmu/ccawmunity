@@ -27,6 +27,13 @@ services:
       - office-data:/app/data
     networks:
       - default
+  stickerpicker:
+    build: /home/sysadmin/stickerpicker
+    restart: always
+    volumes:
+      - office-data:/app/data
+    networks:
+      - default
 
 volumes:
   office-data:
