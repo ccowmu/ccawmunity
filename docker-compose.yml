@@ -30,14 +30,25 @@ services:
   stickerpicker:
     build: /home/sysadmin/stickerpicker
     restart: always
-    volumes:
-      - office-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
     networks:
-      - default
+      default:
+      caddy:
+        aliases:
+          - stickerpicker
 
 volumes:
   office-data:
 
 networks:
   ldap:
+    external: true
+  caddy:
     external: true
